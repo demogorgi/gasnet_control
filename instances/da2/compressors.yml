@@ -1,0 +1,46 @@
+# this file contains the compressor specifications
+
+## alias
+#"N22^N23":
+#   # value of L_max at 0
+#   L_max_pi : 5
+#   # value of L_min at 0
+#   L_min_pi: 1
+#   # argument phi with L_min(phi) = 0
+#   L_min_phi: 1.5
+#   # p_i_min in bar
+#   p_i_min: 10
+#   # p_i_max in bar
+#   p_i_max: 80
+#   # phi_min in m³/s
+#   phi_min: 1.15
+#   # phi_max in m³/s
+#   phi_max: 5.5
+#   # pi_1
+#   pi_1: 1.6
+#   # pi_2
+#   pi_2: 1.8
+#   # eta
+#   eta: 0.8
+
+"N22^N23":
+   # value of L_max at 0
+   L_max_pi : 6
+   # value of L_min at 0
+   L_min_pi: 1
+   # argument phi with L_min(phi) = 0
+   L_min_phi: 1.5
+   # p_i_min in bar
+   p_i_min: 30
+   # p_i_max in bar
+   p_i_max: 85
+   # phi_min in m³/s
+   phi_min: 1.1
+   # phi_max in m³/s
+   phi_max: 6.5
+   # pi_1
+   pi_1: 1.6
+   # pi_2
+   pi_2: 3.6
+   # eta
+   eta: 0.95

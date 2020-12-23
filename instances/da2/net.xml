@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<network interfaceVersion="2.0.1">
+	<information>
+		<title>create_netstate_Eingabedatei</title>
+		<documentation>automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.1\D2A\tab\create_netstate_Eingabedatei.txt</documentation>
+	</information>
+	<units>
+		<nodeHeight unit="m"/>
+		<boundaryNodeInflowLimits unit="1000m_cube_per_hour"/>
+		<boundaryNodeInflowPressureLimits unit="barg"/>
+		<NodePressureLimits unit="barg"/>
+		<pipeLength unit="km"/>
+		<pipeDiameter unit="mm"/>
+		<pipeRoughness unit="mm"/>
+		<resistorDiameter unit="mm"/>
+		<controlValveTargetMaxFlowLimits unit="1000m_cube_per_hour"/>
+		<controlValveTargetMinPressureInLimits unit="barg"/>
+		<controlValveTargetMinPressureOutLimits unit="barg"/>
+		<controlValveTargetMaxPressureOutLimits unit="barg"/>
+		<controlValveDiameter unit="mm"/>
+		<compressorStationTargetFlowLimits unit="1000m_cube_per_hour"/>
+		<compressorStationTargetMinPressureInLimits unit="barg"/>
+		<compressorStationTargetMaxPressureOutLimits unit="barg"/>
+		<compressorStationDiameter unit="mm"/>
+		<networkFlowLimits unit="1000m_cube_per_hour"/>
+		<networkVelocityLimits unit="m_per_s"/>
+	</units>
+	<nodes>
+		<innode id="M3183349669" alias="N23_1" x="337" y="676" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M38407940" alias="N13" x="-289" y="1213" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1292605891" alias="N14" x="-354" y="1539" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2105230616" alias="N26" x="-114" y="1120" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1713818112" alias="N17" x="368" y="438" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1971118626" alias="N17_1" x="476" y="549" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M813460870" alias="N11" x="-341" y="441" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M458309189" alias="N12" x="-362" y="789" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M723640990" alias="N20" x="499" y="1571" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M4171622286" alias="N19" x="388" y="1161" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M3787380431" alias="N18" x="571" y="753" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1448482523" alias="N25" x="223" y="1226" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M831837" alias="N23" x="182" y="782" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<boundaryNode behaviour="exit" id="M4064994510" alias="XN" x="-764" y="1897" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="55.00" upper="72.00"/>
+			<inflowLimits lower="-710" upper="-690"/>
+		</boundaryNode>
+		<boundaryNode behaviour="exit" id="M2752529224" alias="XH" x="1046" y="1884" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="66.00" upper="85.00"/>
+			<inflowLimits lower="-810" upper="-790"/>
+		</boundaryNode>
+		<boundaryNode behaviour="exit" id="M420970524" alias="N22" x="-127" y="658" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="0"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M2968417131" alias="EH" x="590" y="191" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="1600"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M3870610669" alias="EN" x="-649" y="168" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="1600"/>
+		</boundaryNode>
+	</nodes>
+	<connections>
+		<resistor id="M1266493359" alias="RE3" from="M1713818112" to="M1971118626">
+			<diameter value="900.000"/>
+		</resistor>
+		<resistor id="M1382422254" alias="RE2" from="M3787380431" to="M3183349669">
+			<diameter value="900.000"/>
+		</resistor>
+		<pipe id="M3388314563" alias="N12^N13" from="M458309189" to="M38407940">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M1307104929" alias="N13^N14" from="M38407940" to="M1292605891">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M1670171464" alias="N26^N13" from="M2105230616" to="M38407940">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2737134302" alias="N14^XN" from="M1292605891" to="M4064994510">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M4147018463" alias="N19^N25" from="M4171622286" to="M1448482523">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M929832149" alias="EN^N11" from="M3870610669" to="M813460870">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M1450889260" alias="N11^N12" from="M813460870" to="M458309189">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2321125018" alias="N19^N20" from="M4171622286" to="M723640990">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2457950255" alias="N18^N19" from="M3787380431" to="M4171622286">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2185453398" alias="N17_1^N18" from="M1971118626" to="M3787380431">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M3077527630" alias="EH^N17" from="M2968417131" to="M1713818112">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M899376807" alias="N23^N23_1" from="M831837" to="M3183349669">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M3534232795" alias="N12^N22" from="M458309189" to="M420970524">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2255169846" alias="N20^XH" from="M723640990" to="M2752529224">
+			<length value="20.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<controlValve id="M2408474878" alias="CV1" from="M1448482523" to="M2105230616">
+			<type value="normal"/>
+			<targetMaxFlowLimits lower="0.000" upper="6000.000"/>
+			<targetMinPressureInLimits lower="0.000" upper="104.000"/>
+			<targetMinPressureOutLimits lower="40.000" upper="100.000"/>
+			<targetMaxPressureOutLimits lower="0.000" upper="104.000"/>
+			<diameter value="900.000"/>
+			<dragFactorIn value="0.000"/>
+			<dragFactorOut value="0.000"/>
+		</controlValve>
+		<compressorStation id="M2303044117" alias="CS1" from="M420970524" to="M831837">
+			<targetFlowLimits lower="0.000" upper="6000.000"/>
+			<targetMinPressureInLimits lower="0.000" upper="104.000"/>
+			<targetMaxPressureOutLimits lower="0.000" upper="104.000"/>
+			<diameter value="900.000"/>
+			<dragFactorIn value="0.000"/>
+			<dragFactorOut value="0.000"/>
+			<compressorUnitsList>
+				<none/>
+			</compressorUnitsList>
+		</compressorStation>
+	</connections>
+	<flowLimits lower="-10000" upper="10000"/>
+	<velicityLimits lower="-100" upper="100"/>
+</network>
