@@ -1,0 +1,36 @@
+Hallo Uwe,
+
+hier sind meine aktuellen Gedanken zu Urmel-Verdichtern. Ein Grafik dazu
+habe ich dir per WhatsApp geschickt.
+
+Das Kennfeld ist abhängig von diversen Konstanten und vom
+augenblicklichen Vordruck.
+
+Pi ist das Verhältnis aus Hinterdruck und Vordruck, im Kennfelddiagramm
+also eine konstante Funktion von Phi.
+
+Der Dispatcher-Agent darf sich wünschen, ob der Verdichter V aktiv ist
+oder nicht. Dem Wunsch auf Inaktivität wird immer entsprochen, dem auf
+Aktivität nicht.
+
+Der Arbeitspunkt A eines aktiven Verdichters liegt immer im Kennfeld K
+und immer auf Pi. Falls diese beiden Menge disjunkt sind, so ist der
+Verdichter inaktiv.
+
+Der Wunsch auf Aktivität muss immer mit einer Wunschleistung W verbunden
+sein. W liegt zwischen 0% und 100% und wird vom Simulator auf eine
+Leistung L im Kennfelddiagramm umgerechnet.
+
+Es gibt immer einen Schnittpunkt S von L und Pi. Liegt S in K, so ist A = S.
+
+Liegt S nicht in K, so ist S der nächstgelegene Randpunkt von K, der auf
+Pi liegt. Per Konstruktion muss es einen solchen Punkt geben.
+
+
+Oder anders gesagt:
+
+Bilde D als Schnittstrecke von Pi und K.
+
+Bilde S als Schnittpunkt von Pi und L
+
+Dann ist A der S nächstgelegene Punkt aus D.
