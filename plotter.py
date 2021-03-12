@@ -131,22 +131,23 @@ def plot(step, _step, agent_decisions, compressors, output):
     ),
 ])),
 # phi_min line
-"set arrow from %f,0 to %f,%f*1.5 nohead lw 2 lc rgb '#ff00ff' " % (
+"set arrow from %f,0 to %f,%f nohead lw 2 lc rgb '#ff00ff' " % (
     phi_min,
     phi_min,
     pi_2
 ),
 
 # phi_max line
-"set arrow from %f,0 to %f,%f*1.5 nohead lw 2 lc rgb '#ff00ff'" % (
+"set arrow from %f,0 to %f,(%f+%f)/2 nohead lw 2 lc rgb '#ff00ff'" % (
     phi_max,
     phi_max,
+    pi_1,
     pi_2
 ),
 
 # TICKS
 # add L_max_axis_intercept value as tic
-"set ytics add('L_{max\\_axis\\_int}(%s))' %f) " % (
+"set ytics add('L_{max\\_axis\\_int}(%s))     ' %f) " % (
     str(round(p_old(step,_from), 1)),
     L_max_axis_intercept(
         L_max_pi,
@@ -158,22 +159,22 @@ def plot(step, _step, agent_decisions, compressors, output):
 ),
 
 # add pi_2 value as a tic
-"set ytics add ('{/Symbol p}_2' %f) " % pi_2,
+"set ytics add ('{/Symbol p}_{2}     ' %f) " % pi_2,
 
 # add pi_1 value as a tic
-"set ytics add ('{/Symbol p}_1' %f) " % pi_1,
+"set ytics add ('{/Symbol p}_{1}     ' %f) " % pi_1,
 
 # add L_min_pi value as a tic
-"set ytics add ('{/Symbol p}_{\\_min}' %f)" % L_min_pi,
+"set ytics add ('{/Symbol p}_{min}     ' %f)" % L_min_pi,
 
 # add phi_min value as tic
-"set xtics add ('{/Symbol f}_{min}' %f)" % phi_min,
+"set xtics add ('\n{/Symbol f}_{min}' %f)" % phi_min,
 
 # add phi_max value as a tic
-"set xtics add ('{/Symbol f}_{max}' %f)" % phi_max,
+"set xtics add ('\n{/Symbol f}_{max}' %f)" % phi_max,
 
 # add L_phi_min value as a tic
-"set xtics add ('L_{/Symbol f}_{\\_min}' %f)" % L_min_phi,
+"set xtics add ('\n\nL_{/Symbol f}_{,min}' %f)" % L_min_phi,
 
 # POINTS
 # add interception point
