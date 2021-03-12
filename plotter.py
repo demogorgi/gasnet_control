@@ -17,18 +17,20 @@ def plot(step, _step, agent_decisions, compressors, output):
         phi_max = cs["phi_max"]
         phi_min = cs["phi_min"]
 
-        # L_min(phi_min)
-        p1y = - ( L_min_pi / L_min_phi ) * phi_min + L_min_pi
+        # max(L_min_pi,L_min(phi_min))
+        p1y = max(L_min_pi, - ( L_min_pi / L_min_phi ) * phi_min + L_min_pi)
         # ulim(phi_min)
         p2y = ( pi_1 - pi_2 ) / phi_max * phi_min + pi_2
         # ulim(phi_max)
         p3y = ( pi_1 - pi_2 ) / phi_max * phi_max + pi_2
         # interception point ulim and Lmax
         p4x = (L_min_phi * phi_max * (L_max_pi * p_i_max - pi_2 * p_i_max - eta * L_max_pi * p_i_min + pi_2 * p_i_min - L_max_pi * p_old(step,_from) + eta * L_max_pi * p_old(step,_from)))/((L_min_pi * phi_max + L_min_phi * pi_1 - L_min_phi * pi_2) * (p_i_max - p_i_min))
+        # min(phi_max,interception point L_min_pi and Lmax)
+        p5x = min(phi_max, ( L_max_axis_intercept(L_max_pi,eta,p_i_min,p_i_max,p_old(step,_from)) - L_min_pi ) / ( L_min_pi / L_min_phi ))
         # ulim(p4x)
         p4y =  ( pi_1 - pi_2 ) / phi_max * p4x + pi_2
-        # L_max(phi_max)
-        p5y = - ( L_min_pi / L_min_phi ) * phi_max +  L_max_axis_intercept(L_max_pi,eta,p_i_min,p_i_max,p_old(step,_from))
+        # max(L_min_pi, L_max(phi_max))
+        p5y = min(p3y ,max(L_min_pi, - ( L_min_pi / L_min_phi ) * phi_max +  L_max_axis_intercept(L_max_pi,eta,p_i_min,p_i_max,p_old(step,_from))))
 
         cmd = ";".join([
 "gnuplot -e \"set term pdfcairo enhanced font 'Calibri Light, 10'",
@@ -40,20 +42,26 @@ def plot(step, _step, agent_decisions, compressors, output):
 "set ylabel 'Druckverh\344ltnis {/Symbol p}/1'",
 
 # Wheel map polygon
-"set object 1 polygon from %f,%f to %f,%f to %f,%f to %f,%f to %f,0 to %f,0 to %f,%f fillstyle transparent solid 0.3" % (
+"set label at %f, %f 'a' point pointtype 7 pointsize 0.2" % (phi_min,p1y),
+"set label at %f, %f 'b' point pointtype 7 pointsize 0.2" % (phi_min,p2y),
+"set label at %f, %f 'c' point pointtype 7 pointsize 0.2" % (p4x,p4y),
+"set label at %f, %f 'd' point pointtype 7 pointsize 0.2" % (p5x,p5y),
+"set label at %f, %f 'e' point pointtype 7 pointsize 0.2" % (p5x,L_min_pi),
+"set label at %f, %f 'f' point pointtype 7 pointsize 0.2" % (L_min_phi,p1y),
+"set object 1 polygon from %f,%f to %f,%f to %f,%f to %f,%f to %f,%f to %f,%f to %f,%f fillstyle transparent solid 0.3" % (
                           #  a        b        c        d        e       f       g
-    # a
+    # a (starting upper left corner then clockwise)
     phi_min,p1y,
     # b
     phi_min,p2y,
-    # c schnittpunkt ulim und Lmax
+    # c intersection point ulim and Lmax
     p4x,p4y,
     # d
-    phi_max,p5y,
+    p5x,p5y,
     # e
-    phi_max,
+    p5x,L_min_pi,
     # f
-    L_min_phi,
+    L_min_phi,p1y,
     # g
     phi_min,p1y
     ),
