@@ -45,12 +45,12 @@ def plot(step, _step, agent_decisions, compressors, output):
 "set ylabel 'Druckverh\344ltnis {/Symbol p}/1'",
 
 # Wheel map polygon
-"set label at %f, %f 'a' point pointtype 7 pointsize 0.4" % (phi_min,p1y),
-"set label at %f, %f 'b' point pointtype 7 pointsize 0.4" % (phi_min,p2y),
-"set label at %f, %f 'c' point pointtype 7 pointsize 0.4" % (p4x,p4y),
-"set label at %f, %f 'd' point pointtype 7 pointsize 0.4" % (p5x,p5y),
-"set label at %f, %f 'e' point pointtype 7 pointsize 0.4" % (p5x,pi_min),
-"set label at %f, %f 'f' point pointtype 7 pointsize 0.4" % (p6x,pi_min),
+#"set label at %f, %f 'a' point pointtype 7 pointsize 0.4" % (phi_min,p1y),
+#"set label at %f, %f 'b' point pointtype 7 pointsize 0.4" % (phi_min,p2y),
+#"set label at %f, %f 'c' point pointtype 7 pointsize 0.4" % (p4x,p4y),
+#"set label at %f, %f 'd' point pointtype 7 pointsize 0.4" % (p5x,p5y),
+#"set label at %f, %f 'e' point pointtype 7 pointsize 0.4" % (p5x,pi_min),
+#"set label at %f, %f 'f' point pointtype 7 pointsize 0.4" % (p6x,pi_min),
 "set object 1 polygon from %f,%f to %f,%f to %f,%f to %f,%f to %f,%f to %f,%f to %f,%f fillstyle transparent solid 0.3" % (
                           #  a        b        c        d        e       f       g
     # a (starting upper left corner then clockwise)
