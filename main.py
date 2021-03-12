@@ -34,8 +34,8 @@ for i in range(numSteps):
     # for every i in numSteps a simulator step is performed.
     # agent_decisions (init_decisions.yml in scenario folder for the first step) delivers the agents decisions to the simulator and can be modified for every step.
     # i is the step number (neccessary for naming output files if any).
-    # If the last argument "porcess_type" is "sim" files (sol, lp, ... ) will be written if their option is set.
-    # If the last argument "porcess_type" is not "sim" files will only be written if their option is set and if config["debug"] is True.
+    # If the last argument "process_type" is "sim" files (sol, lp, ... ) will be written if their option is set.
+    # If the last argument "process_type" is not "sim" files will only be written if their option is set and if config["debug"] is True.
     solution = simulator_step(agent_decisions, i, "sim")
 
     ##############################################################################
