@@ -156,7 +156,8 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     ## pressure drop equation
     n = 5 # parameter to form the zeta-curve
-    m.addConstrs(( b2p * delta_p[r] == xir(r, 10 ** 8 * get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) ** n * 10 ** ( 4 * ( 1 - n ) ) ) * vQr[r] for r in co.resistors), name='resistor_eq')
+   #m.addConstrs(( b2p * delta_p[r] == xir(r, 10 ** 8 * get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) ** n * 10 ** ( 4 * ( 1 - n ) ) ) * vQr[r] for r in co.resistors), name='resistor_eq')
+    m.addConstrs(( b2p * delta_p[r] == xir(r,           get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)                                ) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
     #### FLAP TRAP MODEL ####

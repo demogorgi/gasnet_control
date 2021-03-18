@@ -49,7 +49,7 @@ if config["contour_output"]:
     if not config["write_sol"]:
         print("WARNING: Config parameter \"write_sol\" needs to be True if contour_output is True.")
     else:
-        os.system("ruby sol2state.rb " + data_path)
+        os.system("ruby sol2state.rb {} {}".format(data_path, dt))
 
 # concat all compressor pdfs to a single one
 if compressors and config["gnuplot"]:

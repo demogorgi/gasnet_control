@@ -191,15 +191,17 @@ def sol2state(scenarioPath,contourInput,solFile,stateTemplate,timestamp)
 end
 
 scenarioPath = ARGV[0]
+delta_t = ARGV[1].to_i
 stateTemplate = File.open(File.join(scenarioPath, "state_sim.xml"), "r")
 solFiles = Dir.glob(File.join(scenarioPath, "output/*.sol")).sort()
 contourInput = File.join(scenarioPath, "/output/contour")
 Dir.mkdir(contourInput) unless File.exists?(contourInput)
 FileUtils.cp(File.join(scenarioPath,"net_sim.xml"), contourInput)
 #FileUtils.cp(File.join(scenarioPath,"state_sim.xml"), contourInput)
-timestamp = Time.now.utc
+#timestamp = Time.now.utc
+timestamp = Time.new(2021, 3, 18, 6, 0, 0)
 solFiles.each_with_index{ |f,i|
     puts("process #{f}")
-    sol2state(scenarioPath,contourInput,f,stateTemplate,(timestamp + i * 900).utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    sol2state(scenarioPath,contourInput,f,stateTemplate,(timestamp + i * delta_t).utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
 }
 stateTemplate.close()
