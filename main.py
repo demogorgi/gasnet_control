@@ -26,10 +26,10 @@ for i in range(numSteps):
     print("step %d" % i)
 
     # dirty hack to randomly generate nominations
-    if i > 0 and (i+1) % config['nomination_freq'] == 0 and (i+1) < numSteps:
-        a = random.randrange(*config["randrange"])
-        agent_decisions["entry_nom"]["S"]["EN_aux0^EN"][i+1] = a
-        agent_decisions["entry_nom"]["S"]["EH_aux0^EH"][i+1] = 1100 - a
+    #if i > 0 and (i+1) % config['nomination_freq'] == 0 and (i+1) < numSteps:
+    #    a = random.randrange(*config["randrange"])
+    #    agent_decisions["entry_nom"]["S"]["EN_aux0^EN"][i+1] = a
+    #    agent_decisions["entry_nom"]["S"]["EH_aux0^EH"][i+1] = 1100 - a
 
     # for every i in numSteps a simulator step is performed.
     # agent_decisions (init_decisions.yml in scenario folder for the first step) delivers the agents decisions to the simulator and can be modified for every step.
@@ -52,7 +52,7 @@ if config["contour_output"]:
         os.system("ruby sol2state.rb " + data_path)
 
 # concat all compressor pdfs to a single one
-if config["gnuplot"]:
+if compressors and config["gnuplot"]:
     p = path.join(data_path, "output/")
     os.system("pdftk " + p + "*.pdf cat output " + p + "all.pdf")
     print("pdftk " + path.join(data_path, "output/*.pdf") + " cat output all.pdf")
