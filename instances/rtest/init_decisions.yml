@@ -1,0 +1,16 @@
+# Decisions of the trader agent
+exit_nom:
+    X:
+        END:
+            0: -100
+
+entry_nom:
+    S:
+        START_aux0^START:
+            0: 1100
+
+# Decisions of the dispatcher agent
+zeta:
+    RE:
+        A^B_aux:
+            0: 0

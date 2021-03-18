@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<state interfaceVersion="2.0.1">
+	<timeOfState timestamp="2021-03-18T16:10:00"/>
+	<units>
+		<energyBufferUnit unit="MWh"/>
+		<nodePressure unit="barg"/>
+		<nodeCalorificValue unit="MJ_per_m_cube"/>
+		<nodeNormDensity unit="kg_per_m_cube"/>
+		<nodeTemperature unit="K"/>
+		<boundaryNodeInflow unit="1000m_cube_per_hour"/>
+		<dynamicViscosity unit="kg_per_m_s"/>
+		<molarMass unit="kg_per_kmol"/>
+		<pseudocriticalPressure unit="bar"/>
+		<pseudocriticalTemperature unit="K"/>
+		<entryInflowNormDensity unit="kg_per_m_cube"/>
+		<entryInflowCalorificValue unit="MJ_per_m_cube"/>
+		<pipeFlowIn unit="1000m_cube_per_hour"/>
+		<pipeFlowOut unit="1000m_cube_per_hour"/>
+		<pipeFlow unit="1000m_cube_per_hour"/>
+		<resistorFlow unit="1000m_cube_per_hour"/>
+		<valveFlow unit="1000m_cube_per_hour"/>
+		<compressorStationFlow unit="1000m_cube_per_hour"/>
+		<compressorStationTargetFlow unit="1000m_cube_per_hour"/>
+		<compressorStationTargetMinPressureIn unit="barg"/>
+		<compressorStationTargetMaxPressureOut unit="barg"/>
+		<compressorUnitMaxPower unit="kW"/>
+		<controlValveFlow unit="1000m_cube_per_hour"/>
+		<controlValveTargetMaxFlow unit="1000m_cube_per_hour"/>
+		<controlValveTargetMinPressureIn unit="barg"/>
+		<controlValveTargetMinPressureOut unit="barg"/>
+		<controlValveTargetMaxPressureOut unit="barg"/>
+		<naviStationFlow unit="1000m_cube_per_hour"/>
+		<naviCompressionPower unit="kW"/>
+	</units>
+	<globalGasParameters>
+		<dynamicViscosity value="1.1E-5"/>
+		<molarMass value="17.086"/>
+		<pseudocriticalPressure value="46.525"/>
+		<pseudocriticalTemperature value="197.401"/>
+	</globalGasParameters>
+	<nodes>
+		<boundaryNodes>
+			<exit id="M3935848537" alias="END">
+				<pressure value="71.950"/>
+				<calorificValue value="37.800"/>
+				<normDensity value="0.600"/>
+				<temperature value="283.100"/>
+				<inflow value="-100.000"/>
+			</exit>
+			<entry id="M3319855275" alias="START">
+				<pressure value="80.000"/>
+				<calorificValue value="37.800"/>
+				<normDensity value="0.600"/>
+				<temperature value="283.100"/>
+				<inflow value="100.000"/>
+				<inflowNormDensity value="0.790"/>
+				<inflowCalorificValue value="40.500"/>
+			</entry>
+		</boundaryNodes>
+		<innodes>
+			<innode id="M3550947327" alias="B">
+				<pressure value="71.950"/>
+				<calorificValue value="37.800"/>
+				<normDensity value="0.600"/>
+				<temperature value="279.700"/>
+			</innode>
+			<innode id="M4169823292" alias="A">
+				<pressure value="80.000"/>
+				<calorificValue value="37.800"/>
+				<normDensity value="0.600"/>
+				<temperature value="283.100"/>
+			</innode>
+		</innodes>
+	</nodes>
+	<connections>
+		<pipe id="M2538008102" alias="B^END" from="M3550947327" to="M3935848537">
+			<flow value="100.000"/>
+		</pipe>
+		<pipe id="M3735381639" alias="START^A" from="M3319855275" to="M4169823292">
+			<flow value="100.000"/>
+		</pipe>
+		<controlValve id="M1612853254" alias="CV" from="M4169823292" to="M3550947327">
+			<flow value="100.000"/>
+			<targetMaxFlow value="10000.000" controllable="true"/>
+			<targetMinPressureIn value="20.000" controllable="true"/>
+			<targetMinPressureOut value="0.000" controllable="true"/>
+			<targetMaxPressureOut value="80.000" controllable="true"/>
+		</controlValve>
+	</connections>
+	<compressorUnits/>
+</state>

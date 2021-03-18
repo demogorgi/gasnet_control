@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<network interfaceVersion="2.0.1">
+	<information>
+		<title>create_netstate_Eingabedatei</title>
+		<documentation>automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.1\RTEST\tab\create_netstate_Eingabedatei.txt</documentation>
+	</information>
+	<units>
+		<nodeHeight unit="m"/>
+		<boundaryNodeInflowLimits unit="1000m_cube_per_hour"/>
+		<boundaryNodeInflowPressureLimits unit="barg"/>
+		<NodePressureLimits unit="barg"/>
+		<pipeLength unit="km"/>
+		<pipeDiameter unit="mm"/>
+		<pipeRoughness unit="mm"/>
+		<resistorDiameter unit="mm"/>
+		<controlValveTargetMaxFlowLimits unit="1000m_cube_per_hour"/>
+		<controlValveTargetMinPressureInLimits unit="barg"/>
+		<controlValveTargetMinPressureOutLimits unit="barg"/>
+		<controlValveTargetMaxPressureOutLimits unit="barg"/>
+		<controlValveDiameter unit="mm"/>
+		<compressorStationTargetFlowLimits unit="1000m_cube_per_hour"/>
+		<compressorStationTargetMinPressureInLimits unit="barg"/>
+		<compressorStationTargetMaxPressureOutLimits unit="barg"/>
+		<compressorStationDiameter unit="mm"/>
+		<networkFlowLimits unit="1000m_cube_per_hour"/>
+		<networkVelocityLimits unit="m_per_s"/>
+	</units>
+	<nodes>
+		<innode id="M3550947327" alias="B" x="167" y="145" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M4169823292" alias="A" x="-142" y="68" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<boundaryNode behaviour="exit" id="M3935848537" alias="END" x="557" y="152" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="30.00" upper="70.00"/>
+			<inflowLimits lower="-1000" upper="0"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M3319855275" alias="START" x="-596" y="66" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+	</nodes>
+	<connections>
+		<pipe id="M2538008102" alias="B^END" from="M3550947327" to="M3935848537">
+			<length value="1.000"/>
+			<diameter value="1000.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M3735381639" alias="START^A" from="M3319855275" to="M4169823292">
+			<length value="1.000"/>
+			<diameter value="1000.000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<controlValve id="M1612853254" alias="CV" from="M4169823292" to="M3550947327">
+			<type value="normal"/>
+			<targetMaxFlowLimits lower="0.000" upper="6000.000"/>
+			<targetMinPressureInLimits lower="0.000" upper="104.000"/>
+			<targetMinPressureOutLimits lower="40.000" upper="100.000"/>
+			<targetMaxPressureOutLimits lower="0.000" upper="104.000"/>
+			<diameter value="900.000"/>
+			<dragFactorIn value="0.000"/>
+			<dragFactorOut value="0.000"/>
+		</controlValve>
+	</connections>
+	<flowLimits lower="-10000" upper="10000"/>
+	<velicityLimits lower="-100" upper="100"/>
+</network>
