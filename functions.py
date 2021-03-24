@@ -136,7 +136,7 @@ def L_gas(pi_MIN,L_min_phi,phi,gas,pi_MAX,eta,p_in_min,p_in_max,p_in):
     return ( 1 - gas ) * L_min(pi_MIN,L_min_phi,phi) + gas * L_max(pi_MIN,L_min_phi,pi_MAX,L_eta,p_in_min,p_in_max,phi,p_in)
 
 # pi_2: Geradengleichung mit den Punkten (0,pi_2) und (phi_max,pi_1)
-def ulim(phi,phi_max,pi_1,pi_2):
+def U(phi,phi_max,pi_1,pi_2):
     return ( pi_1 - pi_2 ) / phi_max * phi + pi_2
 
 # Berechnung der phi-Koordinate des Schnittpunkts zwischen der Druckverhältnisgeraden (=p_out/p_in) und L_gas
@@ -154,7 +154,7 @@ def phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_
 # Prüfung, ob (phi_new_tmp,p_out/p_in) im Kennfeld; falls ja, so ist es das finale phi
 def phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out):
     phi = phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out)
-    if compressor == 1 and ulim(phi,phi_max,pi_1,pi_2) >= p_out/p_in:
+    if compressor == 1 and U(phi,phi_max,pi_1,pi_2) >= p_out/p_in:
         return phi
     else:
         return 0
