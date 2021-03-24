@@ -38,8 +38,10 @@ def plot(step, _step, agent_decisions, compressors, output):
         cmd = ";".join([
 "gnuplot -e \"set term pdfcairo enhanced font 'Calibri Light, 10'",
 "set output '%s/CS_%s_%s%s.pdf'" % (output, _from, _to, _step),
+
 # title
-#"set title '{/:Bold Verdichter %s -> %s (%s)}'" % (_from, _to, _step.replace("_","").replace("_"," \/ ")),
+"set title '{/:Bold Verdichter %s -> %s (%s)}'" % (_from, _to, _step.replace("_","").replace("_"," \/ ")),
+
 # labels
 "set xlabel '\nFluss {/Symbol f}/m^3/s'",
 "set ylabel 'Druckverh\344ltnis {/Symbol p}/1'",
