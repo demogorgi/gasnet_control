@@ -7,10 +7,10 @@
    pi_MIN: 2
    # argument phi with L_MIN(phi) = 0
    phi_MIN: 3
-   # p_i_min in bar
-   p_i_min: 30
-   # p_i_max in bar
-   p_i_max: 85
+   # p_in_min in bar
+   p_in_min: 30
+   # p_in_max in bar
+   p_in_max: 85
    # phi_min in m³/s
    phi_min: 1.1
    # phi_max in m³/s

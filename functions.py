@@ -124,36 +124,36 @@ def L_min(pi_MIN,L_min_phi,phi):
     return - pi_MIN / L_min_phi * phi + pi_MIN
 
 # Achsenabschnitt der Maximalleistung als Funktion vom Eingangsdruck. Quasi "Maximale Max-Leistung"
-def L_max_axis_intercept(pi_MAX,L_eta,p_i_min,p_i_max,p_in):
-    return pi_MAX * ( L_eta - 1 ) / ( p_i_max - p_i_min ) * ( p_in - p_i_min ) + pi_MAX
+def L_max_axis_intercept(pi_MAX,L_eta,p_in_min,p_in_max,p_in):
+    return pi_MAX * ( L_eta - 1 ) / ( p_in_max - p_in_min ) * ( p_in - p_in_min ) + pi_MAX
 
 # Maximalleistung als Funktion vom Fluss unter Verwendung des Achsenabschnitts. Die Steigung erhalten wir aus der Parametrierung der Minimalleistung.
-def L_max(pi_MIN,L_min_phi,pi_MAX,L_eta,p_i_min,p_i_max,phi,p_in):
-    return - pi_MIN / L_min_phi * phi + L_max_axis_intercept(pi_MAX,L_eta,p_i_min,p_i_max,p_in)
+def L_max(pi_MIN,L_min_phi,pi_MAX,L_eta,p_in_min,p_in_max,phi,p_in):
+    return - pi_MIN / L_min_phi * phi + L_max_axis_intercept(pi_MAX,L_eta,p_in_min,p_in_max,p_in)
 
 # Leistung als Funktion des "Gaspedals" zwischen 0% und 100%
-def L_gas(pi_MIN,L_min_phi,phi,gas,pi_MAX,eta,p_i_min,p_i_max,p_in):
-    return ( 1 - gas ) * L_min(pi_MIN,L_min_phi,phi) + gas * L_max(pi_MIN,L_min_phi,pi_MAX,L_eta,p_i_min,p_i_max,phi,p_in)
+def L_gas(pi_MIN,L_min_phi,phi,gas,pi_MAX,eta,p_in_min,p_in_max,p_in):
+    return ( 1 - gas ) * L_min(pi_MIN,L_min_phi,phi) + gas * L_max(pi_MIN,L_min_phi,pi_MAX,L_eta,p_in_min,p_in_max,phi,p_in)
 
 # pi_2: Geradengleichung mit den Punkten (0,pi_2) und (phi_max,pi_1)
 def ulim(phi,phi_max,pi_1,pi_2):
     return ( pi_1 - pi_2 ) / phi_max * phi + pi_2
 
 # Berechnung der phi-Koordinate des Schnittpunkts zwischen der Druckverhältnisgeraden (=p_out/p_in) und L_gas
-def intercept(pi_MIN,L_min_phi,p_i_min,p_i_max,pi_MAX,L_eta,gas,p_in,p_out):
+def intercept(pi_MIN,L_min_phi,p_in_min,p_in_max,pi_MAX,L_eta,gas,p_in,p_out):
     return (L_min_phi * (gas * pi_MAX * p_in ** 2 - gas * L_eta * pi_MAX * p_in ** 2 - 
-   gas * pi_MAX * p_in * p_i_max - pi_MIN * p_in * p_i_max + 
-   gas * pi_MIN * p_in * p_i_max + gas * L_eta * pi_MAX * p_in * p_i_min + 
-   pi_MIN * p_in * p_i_min - gas * pi_MIN * p_in * p_i_min + p_i_max * p_out -
-    p_i_min * p_out))/(pi_MIN * p_in * (-p_i_max + p_i_min))
+   gas * pi_MAX * p_in * p_in_max - pi_MIN * p_in * p_in_max + 
+   gas * pi_MIN * p_in * p_in_max + gas * L_eta * pi_MAX * p_in * p_in_min + 
+   pi_MIN * p_in * p_in_min - gas * pi_MIN * p_in * p_in_min + p_in_max * p_out -
+    p_in_min * p_out))/(pi_MIN * p_in * (-p_in_max + p_in_min))
 
 # Berechnung des neuen phi (Prüfung, ob im Kennfeld in phi_new)
-def phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_in,p_out):
-    return min(max(intercept(pi_MIN,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_in,p_out),phi_min),phi_max)
+def phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out):
+    return min(max(intercept(pi_MIN,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out),phi_min),phi_max)
 
 # Prüfung, ob (phi_new_tmp,p_out/p_in) im Kennfeld; falls ja, so ist es das finale phi
-def phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_in,p_out):
-    phi = phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_in,p_out)
+def phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out):
+    phi = phi_new_tmp(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,Lmaxpi,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out)
     if compressor == 1 and ulim(phi,phi_max,pi_1,pi_2) >= p_out/p_in:
         return phi
     else:

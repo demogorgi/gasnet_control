@@ -10,8 +10,8 @@ def plot(step, _step, agent_decisions, compressors, output):
         phi_MIN = cs["phi_MIN"]
         pi_MAX = cs["pi_MAX"]
         eta = cs["eta"]
-        p_i_min = cs["p_i_min"]
-        p_i_max = cs["p_i_max"]
+        p_in_min = cs["p_in_min"]
+        p_in_max = cs["p_in_max"]
         pi_min = cs["pi_min"]
         pi_1 = cs["pi_1"]
         pi_2 = cs["pi_2"]
@@ -25,15 +25,15 @@ def plot(step, _step, agent_decisions, compressors, output):
         # ulim(phi_max)
         p3y = ( pi_1 - pi_2 ) / phi_max * phi_max + pi_2
         # interception point ulim and Lmax
-        p4x = (phi_MIN * phi_max * (pi_MAX * p_i_max - pi_2 * p_i_max - eta * pi_MAX * p_i_min + pi_2 * p_i_min - pi_MAX * p_old(step,_from) + eta * pi_MAX * p_old(step,_from)))/((pi_MIN * phi_max + phi_MIN * pi_1 - phi_MIN * pi_2) * (p_i_max - p_i_min))
+        p4x = (phi_MIN * phi_max * (pi_MAX * p_in_max - pi_2 * p_in_max - eta * pi_MAX * p_in_min + pi_2 * p_in_min - pi_MAX * p_old(step,_from) + eta * pi_MAX * p_old(step,_from)))/((pi_MIN * phi_max + phi_MIN * pi_1 - phi_MIN * pi_2) * (p_in_max - p_in_min))
         # min(phi_max,interception point min_pi and Lmax)
-        p5x = min( phi_max, ( L_max_axis_intercept(pi_MAX,eta,p_i_min,p_i_max,p_old(step,_from)) - pi_min ) / ( pi_MIN / phi_MIN ) )
+        p5x = min( phi_max, ( L_max_axis_intercept(pi_MAX,eta,p_in_min,p_in_max,p_old(step,_from)) - pi_min ) / ( pi_MIN / phi_MIN ) )
         # interception point L_min and p_min
         p6x = max( phi_min, ( pi_MIN - pi_min ) / ( pi_MIN / phi_MIN ) )
         # ulim(p4x)
         p4y =  ( pi_1 - pi_2 ) / phi_max * p4x + pi_2
         # min(p3y,max(pi_MIN, L_max(phi_max)))
-        p5y = min( p3y ,max(pi_min, - ( pi_MIN / phi_MIN ) * phi_max +  L_max_axis_intercept(pi_MAX,eta,p_i_min,p_i_max,p_old(step,_from))) )
+        p5y = min( p3y ,max(pi_min, - ( pi_MIN / phi_MIN ) * phi_max +  L_max_axis_intercept(pi_MAX,eta,p_in_min,p_in_max,p_old(step,_from))) )
 
         cmd = ";".join([
 "gnuplot -e \"set term pdfcairo enhanced font 'Calibri Light, 10'",
@@ -87,8 +87,8 @@ def plot(step, _step, agent_decisions, compressors, output):
         L_max_axis_intercept(
             pi_MAX,
             eta,
-            p_i_min,
-            p_i_max,
+            p_in_min,
+            p_in_max,
             p_old(step,_from)
         )
     ),
@@ -105,8 +105,8 @@ def plot(step, _step, agent_decisions, compressors, output):
         L_max_axis_intercept(
             pi_MAX,
             eta,
-            p_i_min,
-            p_i_max,
+            p_in_min,
+            p_in_max,
             p_old(step,_from)
         )
     ),
@@ -121,9 +121,9 @@ def plot(step, _step, agent_decisions, compressors, output):
         L_max_axis_intercept(
             pi_MAX,
             eta,
-            p_i_min,
-            p_i_max,
-            p_i_min
+            p_in_min,
+            p_in_max,
+            p_in_min
         )
     ),
 
@@ -163,8 +163,8 @@ def plot(step, _step, agent_decisions, compressors, output):
     L_max_axis_intercept(
         pi_MAX,
         eta,
-        p_i_min,
-        p_i_max,
+        p_in_min,
+        p_in_max,
         p_old(step,_from)
     )
 ),
@@ -199,17 +199,17 @@ def plot(step, _step, agent_decisions, compressors, output):
       pi_MIN,
       pi_MAX,
       phi_MIN,
-      p_i_min,
-      p_i_max,
+      p_in_min,
+      p_in_max,
       pi_MAX,
       eta,
       gas,
       p_old(step,_from),
       p_old(step,_to)
       ),
-  0 if phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_old(step,_from),p_old(step,_to)) == 0 else p_old(step,_to) / p_old(step,_from)
+  0 if phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_old(step,_from),p_old(step,_to)) == 0 else p_old(step,_to) / p_old(step,_from)
   ),
-  #if phi_new(phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_i_min,p_i_max,pi_MAX,eta,gas,p_old(step,l),p_old(step,r)) == 0:
+  #if phi_new(phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_old(step,l),p_old(step,r)) == 0:
   #    0
   #else:
   #    p_old(step,r) / p_old(step,l)
@@ -218,8 +218,8 @@ def plot(step, _step, agent_decisions, compressors, output):
 #    intercept(
 #        pi_MIN,
 #        phi_MIN,
-#        p_i_min,
-#        p_i_max,
+#        p_in_min,
+#        p_in_max,
 #        pi_MAX,
 #        eta,
 #        gas,
