@@ -194,7 +194,6 @@ def plot(step, _step, agent_decisions, compressors, output):
       pi_1,
       pi_2,
       pi_MIN,
-      pi_MAX,
       phi_MIN,
       p_in_min,
       p_in_max,
@@ -204,27 +203,8 @@ def plot(step, _step, agent_decisions, compressors, output):
       p_old(step,_from),
       p_old(step,_to)
       ),
-  0 if phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_old(step,_from),p_old(step,_to)) == 0 else p_old(step,_to) / p_old(step,_from)
+  0 if phi_new(compressor,phi_min,phi_max,pi_1,pi_2,pi_MIN,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_old(step,_from),p_old(step,_to)) == 0 else p_old(step,_to) / p_old(step,_from)
   ),
-  #if phi_new(phi_min,phi_max,pi_1,pi_2,pi_MIN,pi_MAX,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_old(step,l),p_old(step,r)) == 0:
-  #    0
-  #else:
-  #    p_old(step,r) / p_old(step,l)
-  #),
-
-#    intercept(
-#        pi_MIN,
-#        phi_MIN,
-#        p_in_min,
-#        p_in_max,
-#        pi_MAX,
-#        eta,
-#        gas,
-#        p_old(step,_from),
-#        p_old(step,_to)
-#    ),
-#    (p_old(step,_to) / p_old(step,_from))
-#),
 
 # FINILIZE
 "set output '%s/CS_%s_%s%s.pdf'" % (output, _from, _to, _step),
