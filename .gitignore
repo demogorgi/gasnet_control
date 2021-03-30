@@ -1,2 +1,3 @@
 instances/*/output
+instances/*/*pycache*
 *~
