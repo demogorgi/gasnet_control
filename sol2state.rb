@@ -66,9 +66,11 @@ def getPipeFlow(solutionfile)
 end
 
 def setPipeFlow(stateXml, flow)
-	stateXml.elements.each("//connections/pipe") do |e|
-		al= e.attributes['alias']
-		e.elements["flow"].attributes["value"] = flow[al]
+	stateXml.elements.each("//connections/*") do |e|
+            if e.name == "pipe" or e.name == "resistor"
+	    	al= e.attributes['alias']
+	    	e.elements["flow"].attributes["value"] = flow[al]
+	    end
 	end
 end
 
@@ -85,7 +87,7 @@ end
 
 def setNonPipeFlow(stateXml, flow)
 	stateXml.elements.each("//connections/*") do |e|
-		if e.name != "pipe"
+          if e.name != "pipe" and e.name != "resistor"
 			al = e.attributes['alias']
 			e.elements["flow"].attributes["value"] = flow[al]
 		end

@@ -20,6 +20,7 @@ no = importlib.import_module(wd + ".nodes")
 co = importlib.import_module(wd + ".connections")
 
 def joiner(s):
+    print(*s, " --> ",s," --> ",'^'.join(map(str,s)))
     return '^'.join(map(str,s))
 
 def get_agent_decision(deep_agent_decision,i):
@@ -34,7 +35,7 @@ def get_agent_decision(deep_agent_decision,i):
 def simulate(agent_decisions,compressors,t,dt):
     # Model
     m = gp.Model()
-    
+
     ## Node variables
     # pressure for every node
     var_node_p = m.addVars(no.nodes, lb=1.01325, ub=501.01325, name="var_node_p")
@@ -46,47 +47,47 @@ def simulate(agent_decisions,compressors,t,dt):
     var_boundary_node_pressure_slack_negative = m.addVars(no.entries, obj=10, name="var_boundary_node_pressure_slack_negative");
     # node inflow for entries and exits (inflow is negative for exits)
     var_node_Qo_in = m.addVars(no.nodes, lb=-10000, ub=10000, name="var_node_Qo_in")
-    
+
     ## Pipe variables
-    var_pipe_Qo_in = m.addVars(co.pipes, lb=-10000, ub=10000, name="var_pipe_Qo_in")
-    var_pipe_Qo_out = m.addVars(co.pipes, lb=-10000, ub=10000, name="var_pipe_Qo_out")
-    
+    var_pipe_Qo_in = m.addVars(co.pipes + co.resistors, lb=-10000, ub=10000, name="var_pipe_Qo_in")
+    var_pipe_Qo_out = m.addVars(co.pipes + co.resistors, lb=-10000, ub=10000, name="var_pipe_Qo_out")
+
     ## Non pipe connections variables
     var_non_pipe_Qo = m.addVars(co.non_pipes, lb=-10000, ub=10000, name="var_non_pipe_Qo")
-    
+
     ## Flap trap variables
     flaptrap = m.addVars(co.flap_traps, vtype=GRB.BINARY, name="flaptrap")
-    
+
     ## Auxiliary variables v * Q for pressure drop for pipes ...
     vQp = m.addVars(co.pipes, lb=-GRB.INFINITY, name="vQp") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
     # ... and resistors
     vQr = m.addVars(co.resistors, lb=-GRB.INFINITY, name="vQr") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
-    
+
     # Auxiliary variable pressure difference p_out minus p_in
     delta_p = m.addVars(co.connections, lb=-Mp, ub=Mp, name="delta_p") #:= var_node_p[l] - var_node_p[r];
-    
+
     ## Auxiliary variables to track dispatcher agent decisions
     va_DA = m.addVars(co.valves, name="va_DA");
     zeta_DA = m.addVars(co.resistors, name="zeta_DA");
     gas_DA = m.addVars(co.compressors, name="gas_DA");
     compressor_DA = m.addVars(co.compressors, name="compressor_DA");
-    
+
     ## Auxiliary variables to track trader agent decisions
     exit_nom_TA = m.addVars(no.exits, lb=-GRB.INFINITY, name="exit_nom_TA")
     entry_nom_TA = m.addVars(co.special, name="entry_nom_TA")
-    
+
     ## Auxiliary variable to track deviations from entry nominations ...
     nom_entry_slack_DA = m.addVars(co.special, lb=-GRB.INFINITY, name="nom_entry_slack_DA")
     # ... and from exit nominations
     nom_exit_slack_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name="nom_exit_slack_DA")
-    
+
     ## Auxiliary variable to track balances
     scenario_balance_TA = m.addVar(lb=-GRB.INFINITY, name="scenario_balance_TA")
-    
+
     ## Auxiliary variable to track pressure violations
     ub_pressure_violation_DA = m.addVars(no.nodes, lb=-GRB.INFINITY, name="ub_pressure_violation_DA")
     lb_pressure_violation_DA = m.addVars(no.nodes, lb=-GRB.INFINITY, name="lb_pressure_violation_DA")
-    
+
     ## Auxiliary variable to track smoothed flow over S-pipes
     smoothed_special_pipe_flow_DA = m.addVars(co.special, lb=-GRB.INFINITY, name="smoothed_special_pipe_flow_DA")
 
@@ -97,7 +98,8 @@ def simulate(agent_decisions,compressors,t,dt):
     ## v * Q for pressure drop for pipes ...
     m.addConstrs((vQp[p] == ( vi(t,*p) * var_pipe_Qo_in[p] + vo(t,*p) * var_pipe_Qo_out[p] ) * rho / 3.6 for p in co.pipes), name='vxQp')
     # ... and resistors
-    m.addConstrs((vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6 for r in co.resistors), name='vxQr')
+    #m.addConstrs((vQr[r] == ( vi(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_in[r] + vo(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_out[r] ) * rho / 3.6 for r in co.resistors), name='vxQr')
+    m.addConstrs((vQr[r] == var_pipe_Qo_in[r] for r in co.resistors), name='vxQr')
     #
     ## constraints to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
@@ -154,11 +156,11 @@ def simulate(agent_decisions,compressors,t,dt):
     #### RESISTOR MODEL ####
     # Suggested by Klaus.
     #
-    ## pressure drop equation
-    n = 5 # parameter to form the zeta-curve
-   #m.addConstrs(( b2p * delta_p[r] == xir(r, 10 ** 8 * get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) ** n * 10 ** ( 4 * ( 1 - n ) ) ) * vQr[r] for r in co.resistors), name='resistor_eq')
-    m.addConstrs(( b2p * delta_p[r] == xir(r,           get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)                                ) * vQr[r] for r in co.resistors), name='resistor_eq')
+    ## continuity equation
+    m.addConstrs(( b2p * ( var_node_p[r[0]] + var_node_p[r[1]] - p_old(t,r[0]) - p_old(t,r[1]) ) + rho / 3.6 * ( 2 * rtza(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * dt ) * ( var_pipe_Qo_out[r] - var_pipe_Qo_in[r] ) == 0 for r in co.resistors), name='c_e_cons_pipe_continuity_resistors')
     #
+    ## pressure drop equation
+    m.addConstrs(( b2p * delta_p[r] == xir(get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * vQr[r] for r in co.resistors), name='c_e_cons_pipe_momentum_resistors')
     #
     #### FLAP TRAP MODEL ####
     #
@@ -192,5 +194,5 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
     m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.nodes), name='track_lb_pressure_violation')
-    
+
     return m
