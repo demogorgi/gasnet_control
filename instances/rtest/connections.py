@@ -4,7 +4,7 @@ import gurobipy as gp
 from gurobipy import GRB
 
 valves = gp.tuplelist([
-  
+
 ])
 
 flap_traps = gp.tuplelist([
@@ -19,7 +19,7 @@ resistors, diameter = gp.multidict({
 
 # compressors tuples
 compressors = gp.tuplelist([
-	
+
 ])
 
 pipes, length, roughness = gp.multidict({
@@ -59,5 +59,4 @@ special = gp.tuplelist([
 
 connections = pipes + resistors + valves + flap_traps + compressors
 
-non_pipes = [x for x in connections if x not in pipes]
-
+non_pipes = [x for x in connections if x not in pipes and x not in resistors]

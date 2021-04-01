@@ -25,7 +25,7 @@ def get_init_scenario():
     for non_pipe in co.non_pipes:
         states[-2]["q"][non_pipe] = sc.var_non_pipe_Qo_old_old[non_pipe]
         states[-1]["q"][non_pipe] = sc.var_non_pipe_Qo_old[non_pipe]
-    for pipe in co.pipes:
+    for pipe in co.pipes + co.resistors:
         states[-2]["q_in"][pipe]  = sc.var_pipe_Qo_in_old_old[pipe]
         states[-2]["q_out"][pipe] = sc.var_pipe_Qo_out_old_old[pipe]
         states[-1]["q_in"][pipe]  = sc.var_pipe_Qo_in_old[pipe]
@@ -33,7 +33,7 @@ def get_init_scenario():
     return states
 
 states = get_init_scenario()
-print(states)
+#print("states:", states)
 
 # Mean values are used to stabilize simulation
 def stabilizer(a, b):
@@ -52,11 +52,11 @@ def p_old(i,n):
 # flow stabilizer (non-pipes)
 def q_old(i,non_pipe):
     return stabilizer(abs(states[i-1]["q"][non_pipe]), abs(states[i-2]["q"][non_pipe]))
-    
+
 # pipe inflow stabilizer
 def q_in_old(i,pipe):
     return stabilizer(abs(states[i-1]["q_in"][pipe]), abs(states[i-2]["q_in"][pipe]))
-    
+
 # pipe outflow stabilizer
 def q_out_old(i,pipe):
     return stabilizer(abs(states[i-1]["q_out"][pipe]), abs(states[i-2]["q_out"][pipe]))
@@ -77,46 +77,42 @@ def q_out_old(i,pipe):
 # reduced pressure (2.4 Forne)
 def pr(p):
     return p / pc
-    
+
 # reduced Temperature (2.4 Forne)
 def Tr(T):
     return T / Tc
-    
+
 # cross sectional area of a pipe in m²
 def A(diam):
     return Pi * ( diam / 2 ) ** 2
-    
+
 # compressibility factor Papay (2.4 Forne) # Felix: "falsch im Forne-Buch; 0.274, nicht 0.247 muss es sein!"
 def z(p,T):
     return 1 - 3.52 * pr(p) * exp(-2.26 * Tr(T)) + 0.274 * pr(p) ** 2 * exp(-1.878 * Tr(T))
-    
+
 # compressibility factor Papay (2.4 Forne)
 def zm(pi,po):
     return ( z(pi,Tm) + z(po,Tm) ) / 2
-    
+
 # Nikuradze (2.19 Forne), diameter diam in m, integral roughness rough in m
 def lamb(diam, rough):
+    #print("diam: ", diam)
+    #print("rough: ", rough)
     return ( 2 * log(diam/rough,10) + 1.138 ) ** -2
-    
-# Rs * Tm * zm / A
-def rtza(t,i,o):
-    #print("rtza(%s,%s) = %f" %(i,o,Rs * Tm * zm(p_old(i),p_old(o)) / A(co.diameter[(i,o)])))
-    return Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
-    
-# Inflow velocity
-def vi(t,i,o):
-    return rtza(t,i,o) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
-    
-# Outflow velocity
-def vo(t,i,o):
-    return rtza(t,i,o) * rho / 3.6 * q_out_old(t,(i,o)) / ( b2p * p_old(t,o) )
 
-## Function for resistor model
-def vm(t,i,o):
-    vm =  rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) )
-    vmm = max(vm, 2)
-    #print("i: %s, o: %s, vm: %f, vmm: %f" % (i,o,vm,vmm))
-    return vmm
+# Rs * Tm * zm / A
+def rtza(t,i,o,diam=None):
+    diam = co.diameter[(i,o)] if diam is None else diam
+    #print("rtza(%s,%s) = %f" %(i,o,Rs * Tm * zm(p_old(i),p_old(o)) / A(co.diameter[(i,o)])))
+    return Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(diam)
+
+# Inflow velocity
+def vi(t,i,o,diam=None):
+    return rtza(t,i,o) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
+
+# Outflow velocity
+def vo(t,i,o,diam=None):
+    return rtza(t,i,o,diam) * rho / 3.6 * q_out_old(t,(i,o)) / ( b2p * p_old(t,o) )
 
 # Functions for compressor model
 #
@@ -141,9 +137,9 @@ def U(phi,phi_max,pi_1,pi_2):
 
 # Berechnung der phi-Koordinate des Schnittpunkts zwischen der Druckverhältnisgeraden (=p_out/p_in) und L
 def intercept(pi_MIN,phi_MIN,p_in_min,p_in_max,pi_MAX,eta,gas,p_in,p_out):
-    return (phi_MIN * (gas * pi_MAX * p_in ** 2 - gas * eta * pi_MAX * p_in ** 2 - 
-   gas * pi_MAX * p_in * p_in_max - pi_MIN * p_in * p_in_max + 
-   gas * pi_MIN * p_in * p_in_max + gas * eta * pi_MAX * p_in * p_in_min + 
+    return (phi_MIN * (gas * pi_MAX * p_in ** 2 - gas * eta * pi_MAX * p_in ** 2 -
+   gas * pi_MAX * p_in * p_in_max - pi_MIN * p_in * p_in_max +
+   gas * pi_MIN * p_in * p_in_max + gas * eta * pi_MAX * p_in * p_in_min +
    pi_MIN * p_in * p_in_min - gas * pi_MIN * p_in * p_in_min + p_in_max * p_out -
     p_in_min * p_out))/(pi_MIN * p_in * (-p_in_max + p_in_min))
 
@@ -168,5 +164,7 @@ def xip(i):
     return lamb(co.diameter[i], co.roughness[i]) * co.length[i] / ( 4 * co.diameter[i] * A(co.diameter[i]) )
 
 # ... and resistors
-def xir(i,zeta):
-    return zeta / ( 2 * A(co.diameter[i]) );
+#def xir(i,zeta):
+def xir(zeta):
+    #return zeta / ( 2 * A(co.diameter[i]) );
+    return lamb(zeta, 0.0000001) / ( 4 * zeta * A(zeta) )
