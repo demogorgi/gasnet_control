@@ -63,9 +63,9 @@ def simulator_step(agent_decisions, step, process_type):
         for pipe in co.pipes + co.resistors:
             states[step]['q_in'][pipe] = sol["var_pipe_Qo_in[%s,%s]" % pipe]
             states[step]['q_out'][pipe] = sol["var_pipe_Qo_out[%s,%s]" % pipe]
-        print("------------------------")
-        print(states[step])
-        print("------------------------")
+        #print("------------------------")
+        #print(states[step])
+        #print("------------------------")
         ###############
         ### the following can be used to generate a new initial state.
         ###############

@@ -20,7 +20,7 @@ no = importlib.import_module(wd + ".nodes")
 co = importlib.import_module(wd + ".connections")
 
 def joiner(s):
-    print(*s, " --> ",s," --> ",'^'.join(map(str,s)))
+    #print(*s, " --> ",s," --> ",'^'.join(map(str,s)))
     return '^'.join(map(str,s))
 
 def get_agent_decision(deep_agent_decision,i):
@@ -99,7 +99,7 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs((vQp[p] == ( vi(t,*p) * var_pipe_Qo_in[p] + vo(t,*p) * var_pipe_Qo_out[p] ) * rho / 3.6 for p in co.pipes), name='vxQp')
     # ... and resistors
     #m.addConstrs((vQr[r] == ( vi(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_in[r] + vo(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_out[r] ) * rho / 3.6 for r in co.resistors), name='vxQr')
-    m.addConstrs((vQr[r] == var_pipe_Qo_in[r] for r in co.resistors), name='vxQr')
+    m.addConstrs((vQr[r] == ( vi(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_in[r] + vo(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * var_pipe_Qo_out[r] ) * rho / 3.6 for r in co.resistors), name='vxQr')
     #
     ## constraints to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
@@ -144,15 +144,6 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs(( b2p * delta_p[p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
     #
     #
-    #### VALVE MODEL ####
-    # As in section "2.4 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
-    #
-    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] <= Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_one')
-    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] >= - Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_two')
-    m.addConstrs((var_non_pipe_Qo[v] <= Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_three')
-    m.addConstrs((var_non_pipe_Qo[v] >= - Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_four')
-    #
-    #
     #### RESISTOR MODEL ####
     # Suggested by Klaus.
     #
@@ -161,6 +152,14 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     ## pressure drop equation
     m.addConstrs(( b2p * delta_p[r] == xir(get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * vQr[r] for r in co.resistors), name='c_e_cons_pipe_momentum_resistors')
+    #
+    #### VALVE MODEL ####
+    # As in section "2.4 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
+    #
+    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] <= Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_one')
+    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] >= - Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_two')
+    m.addConstrs((var_non_pipe_Qo[v] <= Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_three')
+    m.addConstrs((var_non_pipe_Qo[v] >= - Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_four')
     #
     #### FLAP TRAP MODEL ####
     #

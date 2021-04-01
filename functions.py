@@ -33,7 +33,7 @@ def get_init_scenario():
     return states
 
 states = get_init_scenario()
-print("states:", states)
+#print("states:", states)
 
 # Mean values are used to stabilize simulation
 def stabilizer(a, b):
@@ -52,7 +52,7 @@ def p_old(i,n):
 # flow stabilizer (non-pipes)
 def q_old(i,non_pipe):
     return stabilizer(abs(states[i-1]["q"][non_pipe]), abs(states[i-2]["q"][non_pipe]))
-    
+
 # pipe inflow stabilizer
 def q_in_old(i,pipe):
     return stabilizer(abs(states[i-1]["q_in"][pipe]), abs(states[i-2]["q_in"][pipe]))
@@ -96,8 +96,8 @@ def zm(pi,po):
 
 # Nikuradze (2.19 Forne), diameter diam in m, integral roughness rough in m
 def lamb(diam, rough):
-    print("diam: ", diam)
-    print("rough: ", rough)
+    #print("diam: ", diam)
+    #print("rough: ", rough)
     return ( 2 * log(diam/rough,10) + 1.138 ) ** -2
 
 # Rs * Tm * zm / A
@@ -113,13 +113,6 @@ def vi(t,i,o,diam=None):
 # Outflow velocity
 def vo(t,i,o,diam=None):
     return rtza(t,i,o,diam) * rho / 3.6 * q_out_old(t,(i,o)) / ( b2p * p_old(t,o) )
-
-## Function for resistor model
-def vm(t,i,o,diam=None):
-    vm =  rho / 3.6 * ( rtza(t,i,o,diam) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) )
-    vmm = max(vm, 2)
-    #print("i: %s, o: %s, vm: %f, vmm: %f" % (i,o,vm,vmm))
-    return vmm
 
 # Functions for compressor model
 #
