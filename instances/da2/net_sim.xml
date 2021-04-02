@@ -5,7 +5,7 @@
 			create_netstate_Eingabedatei
 		</title>
 		<documentation>
-			automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.1\D2A\tab\create_netstate_Eingabedatei.txt
+			automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.3\D2A\tab\create_netstate_Eingabedatei.txt
 		</documentation>
 	</information>
 	<units>
@@ -79,6 +79,10 @@
 			<pressureLimits lower="0" upper="104"/>
 		</innode>
 		<innode id="M831837" alias="N23" x="182" y="782" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M420970524" alias="N22" x="-127" y="658" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
 			<height value="0.0"/>
 			<pressureLimits lower="0" upper="104"/>
 		</innode>
@@ -163,10 +167,6 @@
 			<pressureLimits lower="0" upper="104"/>
 		</innode>
 		<innode id="M2456715249" alias="N23_aux" x="244" y="627.5" geoWGS84Lat="51.4685" geoWGS84Long="7.0055">
-			<height value="0.0"/>
-			<pressureLimits lower="0" upper="104"/>
-		</innode>
-		<innode id="M420970524" alias="N22" x="-127" y="658" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
 			<height value="0.0"/>
 			<pressureLimits lower="0" upper="104"/>
 		</innode>

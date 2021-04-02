@@ -3,7 +3,7 @@ name: urmel
 # debug mode with more output
 debug: False
 # write new initial state
-new_init_scenario: False
+new_init_scenario: True
 # write problem files in the lp-format?
 write_lp: False
 # write solution files in the sol-format?
@@ -19,7 +19,7 @@ grb_logfile: gurobi.log
 # gurobi console output
 grb_console: False
 # contour output (net- and state-files in contour folder)
-contour_output: True
+contour_output: False
 # how often new trader nomination comes (number of timesteps)
 nomination_freq: 8
 # controlling random nomination values [start(opt),stop,step(opt)]

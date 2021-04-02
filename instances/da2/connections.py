@@ -17,8 +17,8 @@ flap_traps = gp.tuplelist([
 	('N22_aux', 'N23_aux')
 ])
 
-resistors, diameter = gp.multidict({
-	('N25', 'N26_aux'): 0.9
+resistors = gp.tuplelist({
+	('N25', 'N26_aux')
 })
 
 # compressors tuples
@@ -95,9 +95,7 @@ diameter = {
 	('EN_HDin2', 'EN_HDin1'): 0.3,
 	('EN_HD', 'EN_HDin2'): 2,
 	('N22', 'N22_aux'): 1,
-	('N23_aux', 'N23'): 1,
-	# resistors
-	('N25', 'N26_aux'): 0.9
+	('N23_aux', 'N23'): 1
 }
 
 # special pipes
@@ -108,5 +106,5 @@ special = gp.tuplelist([
 
 connections = pipes + resistors + valves + flap_traps + compressors
 
-non_pipes = [x for x in connections if x not in pipes]
+non_pipes = valves + flap_traps + compressors
 

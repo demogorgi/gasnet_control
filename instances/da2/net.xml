@@ -2,7 +2,7 @@
 <network interfaceVersion="2.0.1">
 	<information>
 		<title>create_netstate_Eingabedatei</title>
-		<documentation>automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.1\D2A\tab\create_netstate_Eingabedatei.txt</documentation>
+		<documentation>automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.3\D2A\tab\create_netstate_Eingabedatei.txt</documentation>
 	</information>
 	<units>
 		<nodeHeight unit="m"/>
@@ -78,6 +78,10 @@
 			<height value="0.0"/>
 			<pressureLimits lower="0" upper="104"/>
 		</innode>
+		<innode id="M420970524" alias="N22" x="-127" y="658" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
 		<boundaryNode behaviour="exit" id="M4064994510" alias="XN" x="-764" y="1897" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
 			<height value="0.0"/>
 			<pressureLimits lower="55.00" upper="72.00"/>
@@ -87,11 +91,6 @@
 			<height value="0.0"/>
 			<pressureLimits lower="66.00" upper="85.00"/>
 			<inflowLimits lower="-810" upper="-790"/>
-		</boundaryNode>
-		<boundaryNode behaviour="exit" id="M420970524" alias="N22" x="-127" y="658" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
-			<height value="0.0"/>
-			<pressureLimits lower="0" upper="104"/>
-			<inflowLimits lower="0" upper="0"/>
 		</boundaryNode>
 		<boundaryNode behaviour="entry" id="M2968417131" alias="EH" x="590" y="191" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
 			<height value="0.0"/>
