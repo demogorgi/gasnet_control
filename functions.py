@@ -23,6 +23,7 @@ def get_init_scenario():
         states[-2]["p"][node]     = sc.var_node_p_old_old[node]
         states[-1]["p"][node]     = sc.var_node_p_old[node]
     for non_pipe in co.non_pipes:
+        print(non_pipe)
         states[-2]["q"][non_pipe] = sc.var_non_pipe_Qo_old_old[non_pipe]
         states[-1]["q"][non_pipe] = sc.var_non_pipe_Qo_old[non_pipe]
     for pipe in co.pipes + co.resistors:
@@ -33,7 +34,7 @@ def get_init_scenario():
     return states
 
 states = get_init_scenario()
-#print("states:", states)
+print("states:", states)
 
 # Mean values are used to stabilize simulation
 def stabilizer(a, b):
@@ -47,6 +48,11 @@ def stabilizer(a, b):
 
 # pressure stabilizer
 def p_old(i,n):
+    try:
+        a = states[i-1]["p"][n]
+        b = states[i-2]["p"][n]
+    except:
+        raise Exception("Cannot get values from solution. Model infeasible?")
     return stabilizer(states[i-1]["p"][n], states[i-2]["p"][n])
 
 # flow stabilizer (non-pipes)
@@ -102,13 +108,14 @@ def lamb(diam, rough):
 
 # Rs * Tm * zm / A
 def rtza(t,i,o,diam=None):
-    diam = co.diameter[(i,o)] if diam is None else diam
-    #print("rtza(%s,%s) = %f" %(i,o,Rs * Tm * zm(p_old(i),p_old(o)) / A(co.diameter[(i,o)])))
+    if diam is None:
+        diam = co.diameter[(i,o)]
+    #print("rtza(%s,%s) = %f" %(i,o,Rs * Tm * zm(p_old(i),p_old(o)) / A(diam)))
     return Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(diam)
 
 # Inflow velocity
 def vi(t,i,o,diam=None):
-    return rtza(t,i,o) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
+    return rtza(t,i,o,diam) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
 
 # Outflow velocity
 def vo(t,i,o,diam=None):
@@ -167,4 +174,4 @@ def xip(i):
 #def xir(i,zeta):
 def xir(zeta):
     #return zeta / ( 2 * A(co.diameter[i]) );
-    return lamb(zeta, 0.0000001) / ( 4 * zeta * A(zeta) )
+    return lamb(zeta, ResPipeRough) * ResPipeLength / ( 4 * zeta * A(zeta) )

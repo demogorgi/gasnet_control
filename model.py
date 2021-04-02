@@ -148,7 +148,7 @@ def simulate(agent_decisions,compressors,t,dt):
     # Suggested by Klaus.
     #
     ## continuity equation
-    m.addConstrs(( b2p * ( var_node_p[r[0]] + var_node_p[r[1]] - p_old(t,r[0]) - p_old(t,r[1]) ) + rho / 3.6 * ( 2 * rtza(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * dt ) * ( var_pipe_Qo_out[r] - var_pipe_Qo_in[r] ) == 0 for r in co.resistors), name='c_e_cons_pipe_continuity_resistors')
+    m.addConstrs(( b2p * ( var_node_p[r[0]] + var_node_p[r[1]] - p_old(t,r[0]) - p_old(t,r[1]) ) + rho / 3.6 * ( 2 * rtza(t,*r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * dt ) / ResPipeLength * ( var_pipe_Qo_out[r] - var_pipe_Qo_in[r] ) == 0 for r in co.resistors), name='c_e_cons_pipe_continuity_resistors')
     #
     ## pressure drop equation
     m.addConstrs(( b2p * delta_p[r] == xir(get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * vQr[r] for r in co.resistors), name='c_e_cons_pipe_momentum_resistors')

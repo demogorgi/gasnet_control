@@ -11,9 +11,9 @@ from deepmerge import always_merger
 import random
 
 # basic argument check
-rem = int(sys.argv[2]) % config['nomination_freq']
-if rem:
-	raise ValueError("Nomination frequency is not a divisor of the number of iterations ({} % {} = {})".format(sys.argv[2],config['nomination_freq'],rem))
+#rem = int(sys.argv[2]) % config['nomination_freq']
+#if rem:
+#	raise ValueError("Nomination frequency is not a divisor of the number of iterations ({} % {} = {})".format(sys.argv[2],config['nomination_freq'],rem))
 
 # read manual file with initial gas network control
 # the dictionary changes with every new control
