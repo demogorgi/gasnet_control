@@ -1,2 +1,4 @@
-instances/da2/output
+instances/*/output
+instances/*/__pycache__
 *~
+*.swp

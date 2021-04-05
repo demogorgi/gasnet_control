@@ -116,7 +116,7 @@ def vm(t,i,o):
     vm =  rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) )
     vmm = max(vm, 2)
     #print("i: %s, o: %s, vm: %f, vmm: %f" % (i,o,vm,vmm))
-    return vmm
+    return vm
 
 # Functions for compressor model
 #

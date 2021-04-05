@@ -192,5 +192,9 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
     m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.nodes), name='track_lb_pressure_violation')
-    
+    #
+    #
+    #### TESTS ####
+#    m.addConstr( var_node_p['START_ND'] == 43.5, 'set_p_ND')
+
     return m
