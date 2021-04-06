@@ -55,7 +55,7 @@ def simulate(agent_decisions,compressors,t,dt):
     var_non_pipe_Qo = m.addVars(co.non_pipes, lb=-10000, ub=10000, name="var_non_pipe_Qo")
     
     ## Flap trap variables
-    flaptrap = m.addVars(co.flap_traps, vtype=GRB.BINARY, name="flaptrap")
+    checkvalve = m.addVars(co.check_valves, vtype=GRB.BINARY, name="checkvalve")
     
     ## Auxiliary variables v * Q for pressure drop for pipes ...
     vQp = m.addVars(co.pipes, lb=-GRB.INFINITY, name="vQp") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
@@ -160,13 +160,13 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
-    #### FLAP TRAP MODEL ####
+    #### CHECK VALVE MODEL ####
     #
-    m.addConstrs((var_non_pipe_Qo[f] >= 0 for f in co.flap_traps), name='flap_trap_eq_one')
-    m.addConstrs((var_non_pipe_Qo[f] <= Mq * flaptrap[f] for f in co.flap_traps), name='flap_trap_eq_two')
-    m.addConstrs((delta_p[f] <= Mq * ( 1 - flaptrap[f] ) + 0.2 * b2p for f in co.flap_traps), name='flap_trap_eq_three')
-    m.addConstrs(( - delta_p[f] <= Mq * ( 1 - flaptrap[f] ) for f in co.flap_traps), name='flap_trap_eq_four')
-    m.addConstrs((delta_p[f] <= 0 for f in co.flap_traps), name='flap_trap_eq_five')
+    m.addConstrs((var_non_pipe_Qo[f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
+    m.addConstrs((var_non_pipe_Qo[f] <= Mq * checkvalve[f] for f in co.check_valves), name='check_valve_eq_two')
+    m.addConstrs((delta_p[f] <= Mq * ( 1 - checkvalve[f] ) + 0.2 * b2p for f in co.check_valves), name='check_valve_eq_three')
+    m.addConstrs(( - delta_p[f] <= Mq * ( 1 - checkvalve[f] ) for f in co.check_valves), name='check_valve_eq_four')
+    m.addConstrs((delta_p[f] <= 0 for f in co.check_valves), name='check_valve_eq_five')
     #
     #### COMPRESSOR MODEL ####
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf

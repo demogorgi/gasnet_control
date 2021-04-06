@@ -8,7 +8,7 @@ valves = gp.tuplelist([
 	('N18', 'N23_1')
 ])
 
-flap_traps = gp.tuplelist([
+check_valves = gp.tuplelist([
 	('EH_NDin2', 'EH_NDin1'),
 	('EH_HDin1', 'EH_aux3'),
 	('EN_NDin2', 'EN_NDin1'),
@@ -106,7 +106,7 @@ special = gp.tuplelist([
 	('EN_aux0', 'EN')
 ])
 
-connections = pipes + resistors + valves + flap_traps + compressors
+connections = pipes + resistors + valves + check_valves + compressors
 
 non_pipes = [x for x in connections if x not in pipes]
 
