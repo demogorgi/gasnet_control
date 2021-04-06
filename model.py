@@ -161,6 +161,8 @@ def simulate(agent_decisions,compressors,t,dt):
     ## pressure drop equation
 	# we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interavl [0,1]
     m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
+    print("XXXX: ", 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"]["A^B_aux"],t) / 3 ))
+    #m.addConstrs(( b2p * delta_p[r] == xir(r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
     ### CHECK VALVE MODEL ###
