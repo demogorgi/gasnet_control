@@ -34,6 +34,8 @@ def get_agent_decision(deep_agent_decision,i):
 def simulate(agent_decisions,compressors,t,dt):
     # Model
     m = gp.Model()
+	
+	#### From here on the variables have to be added. ####
     
     ## Node variables
     # pressure for every node
@@ -62,7 +64,7 @@ def simulate(agent_decisions,compressors,t,dt):
     # ... and resistors
     vQr = m.addVars(co.resistors, lb=-GRB.INFINITY, name="vQr") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
     
-    # Auxiliary variable pressure difference p_out minus p_in
+    ## Auxiliary variable pressure difference p_out minus p_in
     delta_p = m.addVars(co.connections, lb=-Mp, ub=Mp, name="delta_p") #:= var_node_p[l] - var_node_p[r];
     
     ## Auxiliary variables to track dispatcher agent decisions
@@ -90,33 +92,33 @@ def simulate(agent_decisions,compressors,t,dt):
     ## Auxiliary variable to track smoothed flow over S-pipes
     smoothed_special_pipe_flow_DA = m.addVars(co.special, lb=-GRB.INFINITY, name="smoothed_special_pipe_flow_DA")
 
-    # From here on the constraints have to be added.
+    #### From here on the constraints have to be added. ####
 
-    #### AUXILIARY CONSTRAINTS ####
+    ### AUXILIARY CONSTRAINTS ###
     #
-    ## v * Q for pressure drop for pipes ...
+	## v * Q for pressure drop for pipes ...
     m.addConstrs((vQp[p] == ( vi(t,*p) * var_pipe_Qo_in[p] + vo(t,*p) * var_pipe_Qo_out[p] ) * rho / 3.6 for p in co.pipes), name='vxQp')
     # ... and resistors
     m.addConstrs((vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6 for r in co.resistors), name='vxQr')
     #
-    ## constraints to track trader agent's decisions
+    ## constraints only to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
     m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special), name='nome')
     #
-    ## constraints to track dispatcher agent's decisions
+    ## constraints only to track dispatcher agent's decisions
     m.addConstrs((va_DA[v] == get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='va_mode')
     m.addConstrs((zeta_DA[r] == get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) for r in co.resistors), name='re_drag')
     m.addConstrs((gas_DA[cs] == get_agent_decision(agent_decisions["gas"]["CS"][joiner(cs)],t) for cs in co.compressors), name='cs_fuel')
     m.addConstrs((compressor_DA[cs] == get_agent_decision(agent_decisions["compressor"]["CS"][joiner(cs)],t) for cs in co.compressors), name='cs_mode')
     #
-    ## constraints to track smoothing of special pipe flows
+    ## constraints only to track smoothing of special pipe flows
     m.addConstrs((smoothed_special_pipe_flow_DA[s] == ( q_in_old(t,s) + q_out_old(t,s) + var_pipe_Qo_in[s] + var_pipe_Qo_out[s] ) / 4 for s in co.special), name='special_pipe_smoothing')
     #
     ## pressure difference p_out minus p_in
     m.addConstrs((delta_p[c] == var_node_p[c[0]] - var_node_p[c[1]] for c in co.connections), name='dp')
     #
     #
-    #### NODE AND PIPE MODEL ###
+    ### NODE AND PIPE MODEL ###
     # This part is inspired by section "2.2 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
 	# In our simulator setting we do not have to compute the full time horizon at once. We can do it step by step.
 	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
@@ -143,7 +145,7 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs(( b2p * delta_p[p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
     #
     #
-    #### VALVE MODEL ####
+    ### VALVE MODEL ###
     # As in section "2.4 Valves" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
     #
     m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] <= Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_one')
@@ -152,15 +154,16 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs((var_non_pipe_Qo[v] >= - Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_four')
     #
     #
-    #### RESISTOR MODEL ####
+    ### CONTROL VALVE MODEL ###
     # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
 	# We use resistors as control valves by controlling the resistors drag factor from outside
     #
     ## pressure drop equation
+	# we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interavl [0,1]
     m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
-    #### CHECK VALVE MODEL ####
+    ### CHECK VALVE MODEL ###
     #
     m.addConstrs((var_non_pipe_Qo[f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
     m.addConstrs((var_non_pipe_Qo[f] <= Mq * checkvalve[f] for f in co.check_valves), name='check_valve_eq_two')
@@ -168,13 +171,13 @@ def simulate(agent_decisions,compressors,t,dt):
     m.addConstrs(( - delta_p[f] <= Mq * ( 1 - checkvalve[f] ) for f in co.check_valves), name='check_valve_eq_four')
     m.addConstrs((delta_p[f] <= 0 for f in co.check_valves), name='check_valve_eq_five')
     #
-    #### COMPRESSOR MODEL ####
+    ### COMPRESSOR MODEL ###
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf
     #
     m.addConstrs((var_non_pipe_Qo[cs] >= 0 for cs in co.compressors), name='compressor_eq_one')
     m.addConstrs((var_non_pipe_Qo[cs] == get_agent_decision(agent_decisions["compressor"]["CS"][joiner(cs)],t) * 3.6 * p_old(t,cs[0]) * phi_new(get_agent_decision(agent_decisions["compressor"]["CS"][joiner(cs)],t),compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"],get_agent_decision(agent_decisions["gas"]["CS"][joiner(cs)],t),p_old(t,cs[0]),p_old(t,cs[1])) for cs in co.compressors), name='compressor_eq_two')
     #
-    #### ENTRY MODEL ####
+    ### ENTRY MODEL ###
     # Suggested by Klaus and described in gasnet_control/docs/urmel-entry.pdf
     #
     m.addConstrs((var_node_Qo_in[e] <= no.entry_flow_bound[e] for e in no.entries), name='entry_flow_model')
@@ -187,14 +190,15 @@ def simulate(agent_decisions,compressors,t,dt):
     print("--->")
     #
     #
-    #### TRACKING OF RELEVANT VALUES ####
+    ### TRACKING OF RELEVANT VALUES ###
+	#
     m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
     m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.nodes), name='track_lb_pressure_violation')
     #
     #
-    #### TESTS ####
-#    m.addConstr( var_node_p['START_ND'] == 43.5, 'set_p_ND')
+    ### TESTS ###
+	#m.addConstr( var_node_p['START_ND'] == 43.5, 'set_p_ND')
 
     return m
