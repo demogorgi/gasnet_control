@@ -156,13 +156,11 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     ### CONTROL VALVE MODEL ###
     # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
-	# We use resistors as control valves by controlling the resistors drag factor from outside
+    # We use resistors as control valves by controlling the resistors drag factor from outside
     #
     ## pressure drop equation
-	# we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interavl [0,1]
+    # we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interaval [0,100]
     m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
-    print("XXXX: ", 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"]["A^B_aux"],t) / 3 ))
-    #m.addConstrs(( b2p * delta_p[r] == xir(r,get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
     ### CHECK VALVE MODEL ###
@@ -193,7 +191,7 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     #
     ### TRACKING OF RELEVANT VALUES ###
-	#
+    #
     m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
@@ -201,6 +199,6 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     #
     ### TESTS ###
-	#m.addConstr( var_node_p['START_ND'] == 43.5, 'set_p_ND')
+    #m.addConstr( var_node_p['START_ND'] == 43.5, 'set_p_ND')
 
     return m
