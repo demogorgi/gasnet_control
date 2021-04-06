@@ -117,7 +117,10 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     #
     #### NODE AND PIPE MODEL ###
-    # This part is inspired by section "2.2 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364. In our simulator setting we do not have to compute the full time horizon at once. We can do it step by step. This allows us to use variables from the previous step to approximate nonlinear terms in the current step. This is impossible in the opimization setting in the paper.
+    # This part is inspired by section "2.2 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
+	# In our simulator setting we do not have to compute the full time horizon at once. We can do it step by step.
+	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
+	# This is impossible in the opimization setting in the paper.
     #
     ## forall nodes: connection_inflow - connection_outflow = node_inflow
     m.addConstrs((var_node_Qo_in[n] - var_pipe_Qo_in.sum(n, '*') +  var_pipe_Qo_out.sum('*', n) - var_non_pipe_Qo.sum(n, '*') + var_non_pipe_Qo.sum('*', n) == 0 for n in no.nodes), name='c_e_cons_conserv_Qo')
@@ -127,8 +130,6 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     ## flow slack for boundary nodes
     m.addConstrs((- var_boundary_node_flow_slack_positive[x] + var_node_Qo_in[x] <= get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='c_u_cons_boundary_node_wflow_slack_1')
-    #
-    #subto c_u_cons_boundary_node_wflow_slack_2:
     m.addConstrs((- var_boundary_node_flow_slack_negative[x] - var_node_Qo_in[x] <= - get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='c_u_cons_boundary_node_wflow_slack_2')
     #
     ## pressure slack for boundary nodes
@@ -143,7 +144,7 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     #
     #### VALVE MODEL ####
-    # As in section "2.4 Pipes" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
+    # As in section "2.4 Valves" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
     #
     m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] <= Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_one')
     m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] >= - Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_two')
@@ -152,12 +153,11 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     #
     #### RESISTOR MODEL ####
-    # Suggested by Klaus.
+    # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
+	# We use resistors as control valves by controlling the resistors drag factor from outside
     #
     ## pressure drop equation
-    n = 5 # parameter to form the zeta-curve
-   #m.addConstrs(( b2p * delta_p[r] == xir(r, 10 ** 8 * get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) ** n * 10 ** ( 4 * ( 1 - n ) ) ) * vQr[r] for r in co.resistors), name='resistor_eq')
-    m.addConstrs(( b2p * delta_p[r] == xir(r,           get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t)                                ) * vQr[r] for r in co.resistors), name='resistor_eq')
+    m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
     #
     #### FLAP TRAP MODEL ####
