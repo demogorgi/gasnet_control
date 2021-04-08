@@ -7,6 +7,7 @@ from constants import *
 from functions import *
 import gurobipy as gp
 from gurobipy import GRB
+from params import *
 
 import importlib
 import sys
@@ -23,7 +24,7 @@ def joiner(s):
     return '^'.join(map(str,s))
 
 def get_agent_decision(deep_agent_decision,i):
-    r = range(i,-1,-1)
+    r = range(i,-2*config['nomination_freq']-1,-1)
     for i in r:
         if i in deep_agent_decision:
             #print("---------------------------------------------------------")
@@ -34,9 +35,9 @@ def get_agent_decision(deep_agent_decision,i):
 def simulate(agent_decisions,compressors,t,dt):
     # Model
     m = gp.Model()
-	
+
 	#### From here on the variables have to be added. ####
-    
+
     ## Node variables
     # pressure for every node
     var_node_p = m.addVars(no.nodes, lb=1.01325, ub=501.01325, name="var_node_p")
@@ -48,47 +49,47 @@ def simulate(agent_decisions,compressors,t,dt):
     var_boundary_node_pressure_slack_negative = m.addVars(no.entries, obj=10, name="var_boundary_node_pressure_slack_negative");
     # node inflow for entries and exits (inflow is negative for exits)
     var_node_Qo_in = m.addVars(no.nodes, lb=-10000, ub=10000, name="var_node_Qo_in")
-    
+
     ## Pipe variables
     var_pipe_Qo_in = m.addVars(co.pipes, lb=-10000, ub=10000, name="var_pipe_Qo_in")
     var_pipe_Qo_out = m.addVars(co.pipes, lb=-10000, ub=10000, name="var_pipe_Qo_out")
-    
+
     ## Non pipe connections variables
     var_non_pipe_Qo = m.addVars(co.non_pipes, lb=-10000, ub=10000, name="var_non_pipe_Qo")
-    
+
     ## Flap trap variables
     checkvalve = m.addVars(co.check_valves, vtype=GRB.BINARY, name="checkvalve")
-    
+
     ## Auxiliary variables v * Q for pressure drop for pipes ...
     vQp = m.addVars(co.pipes, lb=-GRB.INFINITY, name="vQp") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
     # ... and resistors
     vQr = m.addVars(co.resistors, lb=-GRB.INFINITY, name="vQr") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
-    
+
     ## Auxiliary variable pressure difference p_out minus p_in
     delta_p = m.addVars(co.connections, lb=-Mp, ub=Mp, name="delta_p") #:= var_node_p[l] - var_node_p[r];
-    
+
     ## Auxiliary variables to track dispatcher agent decisions
     va_DA = m.addVars(co.valves, name="va_DA");
     zeta_DA = m.addVars(co.resistors, name="zeta_DA");
     gas_DA = m.addVars(co.compressors, name="gas_DA");
     compressor_DA = m.addVars(co.compressors, name="compressor_DA");
-    
+
     ## Auxiliary variables to track trader agent decisions
     exit_nom_TA = m.addVars(no.exits, lb=-GRB.INFINITY, name="exit_nom_TA")
     entry_nom_TA = m.addVars(co.special, name="entry_nom_TA")
-    
+
     ## Auxiliary variable to track deviations from entry nominations ...
     nom_entry_slack_DA = m.addVars(co.special, lb=-GRB.INFINITY, name="nom_entry_slack_DA")
     # ... and from exit nominations
     nom_exit_slack_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name="nom_exit_slack_DA")
-    
+
     ## Auxiliary variable to track balances
     scenario_balance_TA = m.addVar(lb=-GRB.INFINITY, name="scenario_balance_TA")
-    
+
     ## Auxiliary variable to track pressure violations
     ub_pressure_violation_DA = m.addVars(no.nodes, lb=-GRB.INFINITY, name="ub_pressure_violation_DA")
     lb_pressure_violation_DA = m.addVars(no.nodes, lb=-GRB.INFINITY, name="lb_pressure_violation_DA")
-    
+
     ## Auxiliary variable to track smoothed flow over S-pipes
     smoothed_special_pipe_flow_DA = m.addVars(co.special, lb=-GRB.INFINITY, name="smoothed_special_pipe_flow_DA")
 
@@ -103,7 +104,7 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     ## constraints only to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
-    m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special), name='nome')
+    m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nome')
     #
     ## constraints only to track dispatcher agent's decisions
     m.addConstrs((va_DA[v] == get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='va_mode')
@@ -181,18 +182,18 @@ def simulate(agent_decisions,compressors,t,dt):
     # Suggested by Klaus and described in gasnet_control/docs/urmel-entry.pdf
     #
     m.addConstrs((var_node_Qo_in[e] <= no.entry_flow_bound[e] for e in no.entries), name='entry_flow_model')
-    m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special), name='nomination_check')
+    m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nomination_check')
     print("--->")
     print([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits])
     print("--->")
     print([joiner(s) for s in co.special])
-    print([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special])
+    print([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special])
     print("--->")
     #
     #
     ### TRACKING OF RELEVANT VALUES ###
     #
-    m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
+    m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
     m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.nodes), name='track_lb_pressure_violation')
