@@ -26,6 +26,7 @@ import functions as funcs
 from params import *
 
 
+
 class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps):
@@ -35,9 +36,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             init_decisions = yaml.load(file, Loader=yaml.FullLoader)
 
         # safe the control variable names for later mapping
-        self._valves = init_decisions["va"]["VA"].keys
-        self._resistors = init_decisions["zeta"]["RE"].keys
-        self._compressors = init_decisions["compressor"]["CS"].keys
+        self._valves = list(init_decisions["va"]["VA"].keys())
+        self._resistors = list(init_decisions["zeta"]["RE"].keys())
+        self._compressors = list(init_decisions["compressor"]["CS"].keys())
 
         n_valves = len(self._valves)
         n_resistors = len(self._resistors)
@@ -47,9 +48,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # overall minimum set to 0, maxima are 1 for valves and the
         # discretization step size for others
         self._discretization = discretization_steps
-        control_minima = 0
+        control_minima = [0]*n_control_vars
         valve_maxima = [1]*n_valves
-        resistor_maxima = [discretization_steps]*n_resistors
+        # TODO: define reasonable values for upper resistor bounds
+        resistor_maxima = [0]*n_resistors
         compressor_maxima = [discretization_steps]*n_compressors
         control_maxima = valve_maxima + resistor_maxima + compressor_maxima
 
@@ -57,8 +59,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(n_control_vars,),
             dtype=np.int32,
-            minimum=control_minima,
-            maximum=control_maxima,
+            minimum=np.array(control_minima),
+            maximum=np.array(control_maxima),
             name='action'
         )
         ### define the observations specificities
@@ -81,7 +83,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # extract the pressure ranges
         node_pressure_minima = [no.pressure_limits_lower[node] for node in
                                 nodes_list]
-        node_pressure_maxima = [no.pressure_limits_upper[node] for node in
+        # TODO: check why initial pressures are higher than upper bound
+        node_pressure_maxima = [no.pressure_limits_upper[node] + 3.0 for node in
                                 nodes_list]
         # set the inflow ranges, TODO: ask if necessary and extract from file
         #node_inflow_minima = [-10000]*n_nodes
@@ -106,8 +109,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(n_observations,), dtype=np.float32,
-            minimum=observation_minima,
-            maximum=observation_maxima,
+            minimum=np.array(observation_minima),
+            maximum=np.array(observation_maxima),
             name='observation'
         )
         # define the initial state (initial network + nominations)
@@ -123,7 +126,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
         for count, node in enumerate(no.exits + co.special):
             try:
-                if len(node) == 1:
+                if type(node) == str:
                     nomination = init_decisions["exit_nom"]["X"][node][1]
                 else:
                     key = joiner(node)
@@ -140,13 +143,24 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         non_pipe_values = [states[-1]["q"][non_pipe]
                            for non_pipe in co.non_pipes]
 
-        self._state = nominations_t0 + nominations_t1 + node_pressures + \
-                      pipe_inflows + non_pipe_values
+        self._state = np.array(
+                        nominations_t0 + nominations_t1 + node_pressures + \
+                        pipe_inflows + non_pipe_values
+                        , np.float32)
 
+        ## debugging
+        for i, val in enumerate(self._state):
+            if val > observation_maxima[i]:
+                print(f"error detected at index {i}")
+            if val < observation_minima[i]:
+                print(f"error detected at index {i}")
+        ## end of debugging
         self._episode_ended = False
 
         # counter to come to an end
         self._action_counter = 0
+        # set simulation_step counter in urmel to 0
+        simulator_step.counter = 0
 
     def action_spec(self):
         return self._action_spec
@@ -168,7 +182,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
         for count, node in enumerate(no.exits + co.special):
             try:
-                if len(node) == 1:
+                if type(node) == str:
                     nomination = init_decisions["exit_nom"]["X"][node][1]
                 else:
                     key = joiner(node)
@@ -185,8 +199,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         non_pipe_values = [states[-1]["q"][non_pipe]
                            for non_pipe in co.non_pipes]
 
-        self._state = nominations_t0 + nominations_t1 + node_pressures + \
-                      pipe_inflows + non_pipe_values
+        self._state = np.array(
+                        nominations_t0 + nominations_t1 + node_pressures + \
+                        pipe_inflows + non_pipe_values
+                        , np.float32)
 
         self._episode_ended = False
 
@@ -200,54 +216,56 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # is restarted
             return self.reset()
 
-        # TODO: Implement a reasonable time step counter for the max amount of
-        # TODO: steps
-        if self._action_counter > 8:
-            self._episode_ended = True
-            # TODO: calculate reward, maybe dependent on earlier steps
+        ### simulate one step
+        # convert the action vector such that urmel can use it
+        # first get the necessary dictionary syntax
+        with open(path.join(data_path, 'init_decisions.yml')) as file:
+            agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
+
+        # second handle all actions and convert it to the format
+        step = self._action_counter
+        n_valves = len(self._valves)
+        n_resistors = len(self._resistors)
+        for action_counter, action in enumerate(action):
+            if action_counter < n_valves:
+                valve = self._valves[action_counter]
+                agent_decisions["va"]["VA"][valve][step] = 1#action
+            elif action_counter < n_valves + n_resistors:
+                resistor = self._resistors[action_counter - n_valves]
+                # TODO: clarify resistor handling and value calculation
+                agent_decisions["zeta"]["RE"][resistor][step] = 120
+            else:
+                compressor_index = action_counter - n_valves - n_resistors
+                compressor = self._compressors[compressor_index]
+                if action > 10e-3:
+                    activation = 1
+                    efficiency = 0.3#1/self._discretization * action
+                else:
+                    activation = 0
+                    efficiency = 0.0
+                agent_decisions["gas"]["CS"][compressor][step] = efficiency
+                agent_decisions["gas"]["CS"][compressor][step] = activation
+
+        solution = simulator_step(agent_decisions, step, "sim")
+        if solution is None:
             reward = 0
+            self._episode_ended = True
+            print("The reward in this step would be 0")
             return ts.termination(self._state, reward)
         else:
-            ### simulate one step
-            # convert the action vector such that urmel can use it
-            # first get the necessary dictionary syntax
-            with open(path.join(data_path, 'init_decisions.yml')) as file:
-                agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
+            reward = 100
+            for variable_name in solution.keys():
+                if variable_name == "scenario_balance_TA":
+                    reward -= solution[variable_name]
+                elif variable_name.endswith("b_pressure_violation_DA"):
+                    reward -= solution[variable_name]
+        print(f"The reward in this step would be {reward}")
+        self._action_counter += 1
 
-            # second handle all actions and convert it to the format
-            step = self._action_counter
-            n_valves = len(self._valves)
-            n_resistors = len(self._resistors)
-            for action_counter, action in enumerate(action):
-                if action_counter < n_valves:
-                    valve = self._valves[action_counter]
-                    agent_decisions["va"]["VA"][valve][step] = action
-                elif action_counter < n_valves + n_resistors:
-                    resistor = self._resistors[action_counter - n_valves]
-                    # TODO: clarify resistor handling and value calculation
-                    agent_decisions["zeta"]["RE"][resistor][step] = action
-                else:
-                    compressor_index = action_counter - n_valves - n_resistors
-                    compressor = self._compressors[compressor_index]
-                    if action > 10e-3:
-                        activation = 1
-                        efficiency = 100/self._discretization * action
-                    else:
-                        activation = 0
-                        efficiency = 0.0
-                    agent_decisions["gas"]["CS"][compressor][step] = efficiency
-                    agent_decisions["gas"]["CS"][compressor][step] = activation
-
-            solution = simulator_step(agent_decisions, step, "sim")
-            if solution is None:
-                reward = 0
-            else:
-                reward = 100
-                for variable_name in solution.keys():
-                    if variable_name == "scenario_balance_TA":
-                        reward -= solution[variable_name]
-                    elif variable_name.endswith("b_pressure_violation_DA"):
-                        reward -= solution[variable_name]
-
-            self._action_counter += 1
+        # TODO: Implement a reasonable time step counter for the max amount of
+        # TODO: steps as below
+        if self._action_counter >= 8:
+            self._episode_ended = True
+            return ts.termination(self._state, reward=reward)
+        else:
             return ts.transition(self._state, reward=reward, discount=1.0)
