@@ -93,7 +93,13 @@ def simulator_step(agent_decisions, step, process_type):
         else:
             if config['urmel_console_output']:
                 print("Model is infeasible.")
+
+        # return statement if no solution
+        return
     # don't know yet, what else
     else:
         if config['urmel_console_output']:
             print("Solution status is %d, don't know what to do." % status)
+
+        # return statement if no solution
+        return None
