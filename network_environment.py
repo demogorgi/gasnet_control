@@ -21,7 +21,7 @@ from tf_agents.trajectories import time_step as ts
 
 # own inputs
 from model import *
-#import functions as funcs
+import functions as funcs
 from params import *
 
 class GasNetworkEnv(py_environment.PyEnvironment):
@@ -85,13 +85,16 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         non_pipe_maxima = [10000]*n_non_pipes
 
         # define the actual observation spec
-        n_observations = n_entries_exits + n_nodes + n_pipes + n_non_pipes
-        observation_minima = entries_exits_minima + node_pressure_minima + \
+        # 2 times entries and exits since we want to have nominations of time 0
+        # and time 1
+        n_observations = 2*n_entries_exits + n_nodes + n_pipes + n_non_pipes
+        observation_minima = 2*entries_exits_minima + node_pressure_minima + \
                              node_inflow_minima + pipe_in_minima + \
                              non_pipe_minima
-        observation_maxima = entries_exits_maxima + node_pressure_maxima + \
+        observation_maxima = 2*entries_exits_maxima + node_pressure_maxima + \
                              node_inflow_maxima + pipe_in_maxima + \
                              non_pipe_maxima
+
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(n_observations,), dtype=np.float32,
             minimum=observation_minima,
@@ -99,18 +102,23 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             name='observation'
         )
         # define the initial state (initial network + nominations)
+        # TODO: insert a vector with initial values for all observations
         states = funcs.get_init_scenario()
+        self._state = states
 
         self._episode_ended = False
 
-    def action_spec(self):# -> types.NestedArraySpec:
-        pass
+    def action_spec(self):
+        return self._action_spec
 
-    def observation_spec(self):# -> types.NestedArraySpec:
-        pass
+    def observation_spec(self):
+        return self._observation_spec
 
-    def _reset(self) -> ts.TimeStep:
-        pass
+    def _reset(self):
+        # TODO: check functionality in learning and initialize as in __init__
+        self._state = funcs.get_init_scenario()
+        self._episode_ended = False
+        return ts.restart(self._state)
 
     def _step(self, action):
         pass
