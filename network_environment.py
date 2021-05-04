@@ -28,13 +28,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps):
         ### define the action specificities
-        # analyse initial decisions to extract action types and amount
+        # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as file:
-            agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
+            init_decisions = yaml.load(file, Loader=yaml.FullLoader)
 
-        n_valves = len(agent_decisions["va"]["VA"])
-        n_compressors = len(agent_decisions["compressor"]["CS"])
-        n_resistors = len(agent_decisions["zeta"]["RE"])
+        n_valves = len(init_decisions["va"]["VA"])
+        n_compressors = len(init_decisions["compressor"]["CS"])
+        n_resistors = len(init_decisions["zeta"]["RE"])
         n_control_vars = n_valves + n_compressors + n_resistors
 
         # overall minimum set to 0, maxima are 1 for valves and the
@@ -76,8 +76,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         node_pressure_maxima = [no.pressure_limits_upper[node] for node in
                                 nodes_list]
         # set the inflow ranges, TODO: ask if necessary and extract from file
-        node_inflow_minima = [-10000]*n_nodes
-        node_inflow_maxima = [10000]*n_nodes
+        #node_inflow_minima = [-10000]*n_nodes
+        #node_inflow_maxima = [10000]*n_nodes
         # extract in and non pipe infos, TODO: extract from file?
         pipe_in_minima = [-10000]*n_pipes
         pipe_in_maxima = [10000]*n_pipes
@@ -89,11 +89,12 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # and time 1
         n_observations = 2*n_entries_exits + n_nodes + n_pipes + n_non_pipes
         observation_minima = 2*entries_exits_minima + node_pressure_minima + \
-                             node_inflow_minima + pipe_in_minima + \
-                             non_pipe_minima
+                             pipe_in_minima + non_pipe_minima
+                             #node_inflow_minima to be added on third position
+
         observation_maxima = 2*entries_exits_maxima + node_pressure_maxima + \
-                             node_inflow_maxima + pipe_in_maxima + \
-                             non_pipe_maxima
+                             pipe_in_maxima + non_pipe_maxima
+                             #node_inflow_maxima to be added on third position
 
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(n_observations,), dtype=np.float32,
@@ -103,8 +104,36 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         )
         # define the initial state (initial network + nominations)
         # TODO: insert a vector with initial values for all observations
+        # extract the initial nominations and if given for the next time step
+        nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
+                          for ex in no.exits]
+        nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)][0]
+                           for supply in co.special]
+        # length of nominations has to be the same as in the observation specs
+        assert(len(nominations_t0) == n_entries_exits)
+
+        nominations_t1 = []
+        for count, node in enumerate(no.exits + co.special):
+            try:
+                if len(node) == 1:
+                    nomination = init_decisions["exit_nom"]["X"][node][1]
+                else:
+                    key = joiner(node)
+                    nomination = init_decisions["entry_nom"]["S"][key][1]
+            except KeyError:
+                nomination = nominations_t0[count]
+            nominations_t1 += [nomination]
+
+        # extract the initial node pressure and inflow as well as the
+        # initial values for non pipe elements
         states = funcs.get_init_scenario()
-        self._state = states
+        node_pressures = [states[-1]["p"][node] for node in no.nodes]
+        pipe_inflows = [states[-1]["q_in"][pipe] for pipe in co.pipes]
+        non_pipe_values = [states[-1]["q"][non_pipe]
+                           for non_pipe in co.non_pipes]
+
+        self._state = nominations_t0 + nominations_t1 + node_pressures + \
+                      pipe_inflows + non_pipe_values
 
         self._episode_ended = False
 
@@ -115,9 +144,41 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         return self._observation_spec
 
     def _reset(self):
-        # TODO: check functionality in learning and initialize as in __init__
-        self._state = funcs.get_init_scenario()
+        # TODO: check functionality in learning
+        # extract initial decisions/values
+        with open(path.join(data_path, 'init_decisions.yml')) as file:
+            init_decisions = yaml.load(file, Loader=yaml.FullLoader)
+        # extract the initial nominations and if given for the next time step
+        nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
+                          for ex in no.exits]
+        nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)][0]
+                           for supply in co.special]
+
+        nominations_t1 = []
+        for count, node in enumerate(no.exits + co.special):
+            try:
+                if len(node) == 1:
+                    nomination = init_decisions["exit_nom"]["X"][node][1]
+                else:
+                    key = joiner(node)
+                    nomination = init_decisions["entry_nom"]["S"][key][1]
+            except KeyError:
+                nomination = nominations_t0[count]
+            nominations_t1 += [nomination]
+
+        # extract the initial node pressure and inflow as well as the
+        # initial values for non pipe elements
+        states = funcs.get_init_scenario()
+        node_pressures = [states[-1]["p"][node] for node in no.nodes]
+        pipe_inflows = [states[-1]["q_in"][pipe] for pipe in co.pipes]
+        non_pipe_values = [states[-1]["q"][non_pipe]
+                           for non_pipe in co.non_pipes]
+
+        self._state = nominations_t0 + nominations_t1 + node_pressures + \
+                      pipe_inflows + non_pipe_values
+        
         self._episode_ended = False
+
         return ts.restart(self._state)
 
     def _step(self, action):
