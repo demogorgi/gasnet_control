@@ -205,10 +205,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         , np.float32)
 
         self._episode_ended = False
+        self._action_counter = 0
 
         return ts.restart(self._state)
 
-    def _step(self, action):
+    def _step(self, actions):
 
         if self._episode_ended:
             # The last actions ended the episode
@@ -226,10 +227,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         step = self._action_counter
         n_valves = len(self._valves)
         n_resistors = len(self._resistors)
-        for action_counter, action in enumerate(action):
+        for action_counter, action in enumerate(actions):
             if action_counter < n_valves:
                 valve = self._valves[action_counter]
-                agent_decisions["va"]["VA"][valve][step] = 1#action
+                agent_decisions["va"]["VA"][valve][step] = action
             elif action_counter < n_valves + n_resistors:
                 resistor = self._resistors[action_counter - n_valves]
                 # TODO: clarify resistor handling and value calculation
@@ -239,7 +240,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 compressor = self._compressors[compressor_index]
                 if action > 10e-3:
                     activation = 1
-                    efficiency = 0.3#1/self._discretization * action
+                    efficiency = 1/self._discretization * action
                 else:
                     activation = 0
                     efficiency = 0.0
@@ -247,11 +248,45 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 agent_decisions["gas"]["CS"][compressor][step] = activation
 
         solution = simulator_step(agent_decisions, step, "sim")
+
+        # extract the nominations for updated state
+        nominations_t0 = []
+        for count, node in enumerate(no.exits + co.special):
+            try:
+                if type(node) == str:
+                    nomination = agent_decisions["exit_nom"]["X"][node][
+                        step + 1]
+                else:
+                    key = joiner(node)
+                    nomination = agent_decisions["entry_nom"]["S"][key][
+                        step + 1]
+            except KeyError:
+                if type(node) == str:
+                    nomination = agent_decisions["exit_nom"]["X"][node][0]
+                else:
+                    key = joiner(node)
+                    nomination = agent_decisions["entry_nom"]["S"][key][0]
+            nominations_t0 += [nomination]
+
+        nominations_t1 = []
+        for count, node in enumerate(no.exits + co.special):
+            try:
+                if type(node) == str:
+                    nomination = agent_decisions["exit_nom"]["X"][node][
+                        step + 2]
+                else:
+                    key = joiner(node)
+                    nomination = agent_decisions["entry_nom"]["S"][key][
+                        step + 2]
+            except KeyError:
+                nomination = nominations_t0[count]
+            nominations_t1 += [nomination]
+
+        # if the resulting problem is infeasible we reward 0
         if solution is None:
             reward = 0
             self._episode_ended = True
-            print("The reward in this step would be 0")
-            return ts.termination(self._state, reward)
+        # otherwise we calculate the reward as 100 - the violations
         else:
             reward = 100
             for variable_name in solution.keys():
@@ -259,12 +294,25 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     reward -= solution[variable_name]
                 elif variable_name.endswith("b_pressure_violation_DA"):
                     reward -= solution[variable_name]
-        print(f"The reward in this step would be {reward}")
+
+            # update the state variables
+            node_pressures = [solution["var_node_p[%s]" % node]
+                              for node in no.nodes]
+            pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
+                            for pipe in co.pipes]
+            non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
+                               for non_pipe in co.non_pipes]
+
+            self._state = np.array(
+                nominations_t0 + nominations_t1 + node_pressures + \
+                pipe_inflows + non_pipe_values
+                , np.float32)
+
         self._action_counter += 1
 
         # TODO: Implement a reasonable time step counter for the max amount of
         # TODO: steps as below
-        if self._action_counter >= 8:
+        if self._action_counter >= 8 or self._episode_ended:
             self._episode_ended = True
             return ts.termination(self._state, reward=reward)
         else:
