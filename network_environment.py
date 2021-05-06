@@ -7,6 +7,7 @@ from __future__ import print_function
 import abc
 import tensorflow as tf
 import numpy as np
+import itertools
 
 from tf_agents.environments import py_environment
 from tf_agents.environments import tf_environment
@@ -29,8 +30,9 @@ from params import *
 
 class GasNetworkEnv(py_environment.PyEnvironment):
 
-    def __init__(self, discretization_steps):
+    def __init__(self, discretization_steps, convert_action=True):
         ### define the action specificities
+        self._convert_action = convert_action
         # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as file:
             init_decisions = yaml.load(file, Loader=yaml.FullLoader)
@@ -56,13 +58,32 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         control_maxima = valve_maxima + resistor_maxima + compressor_maxima
 
         # define the actual action spec
-        self._action_spec = array_spec.BoundedArraySpec(
-            shape=(n_control_vars,),
-            dtype=np.int32,
-            minimum=np.array(control_minima),
-            maximum=np.array(control_maxima),
-            name='action'
-        )
+        if convert_action:
+            # convert all actions to one variable
+            # define a list with lists of possible values for each action
+            action_list = [list(range(minimum, maximum + 1))
+                           for minimum, maximum
+                           in zip(control_minima, control_maxima)]
+            action_combinations = list(itertools.product(*action_list))
+            self._action_mapping = {}
+            for i, action in enumerate(action_combinations):
+                self._action_mapping[i] = action
+
+            self._action_spec = array_spec.BoundedArraySpec(
+                shape=(),
+                dtype=np.int32,
+                minimum=0,
+                maximum=len(self._action_mapping.keys()) - 1,
+                name='action'
+            )
+        else:
+            self._action_spec = array_spec.BoundedArraySpec(
+                shape=(n_control_vars,),
+                dtype=np.int32,
+                minimum=np.array(control_minima),
+                maximum=np.array(control_maxima),
+                name='action'
+            )
         ### define the observations specificities
         ## extract the nominations
         entries_exits_list = no.nodes_with_bds
@@ -225,9 +246,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         # second handle all actions and convert it to the format
         step = self._action_counter
+
+        if self._convert_action:
+            action_list = list(self._action_mapping[actions])
+        else:
+            action_list = actions
         n_valves = len(self._valves)
         n_resistors = len(self._resistors)
-        for action_counter, action in enumerate(actions):
+        for action_counter, action in enumerate(action_list):
             if action_counter < n_valves:
                 valve = self._valves[action_counter]
                 agent_decisions["va"]["VA"][valve][step] = action
