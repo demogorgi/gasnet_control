@@ -248,7 +248,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         step = self._action_counter
 
         if self._convert_action:
-            action_list = list(self._action_mapping[actions])
+            action_list = list(self._action_mapping[np.int(actions)])
         else:
             action_list = actions
         n_valves = len(self._valves)
