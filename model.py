@@ -99,6 +99,7 @@ def simulate(agent_decisions,compressors,t,dt):
     #
 	## v * Q for pressure drop for pipes ...
     m.addConstrs((vQp[p] == ( vi(t,*p) * var_pipe_Qo_in[p] + vo(t,*p) * var_pipe_Qo_out[p] ) * rho / 3.6 for p in co.pipes), name='vxQp')
+    # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
     m.addConstrs((vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6 for r in co.resistors), name='vxQr')
     #
@@ -142,7 +143,7 @@ def simulate(agent_decisions,compressors,t,dt):
     ## continuity equation
     m.addConstrs(( b2p * ( var_node_p[p[0]] + var_node_p[p[1]] - p_old(t,p[0]) - p_old(t,p[1]) ) + rho / 3.6 * ( 2 * rtza(t,*p) * dt ) / co.length[p] * ( var_pipe_Qo_out[p] - var_pipe_Qo_in[p] ) == 0 for p in co.pipes), name='c_e_cons_pipe_continuity')
     #
-    ## pressure drop equation
+    ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
     m.addConstrs(( b2p * delta_p[p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
     #
     #
@@ -159,7 +160,7 @@ def simulate(agent_decisions,compressors,t,dt):
     # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
     # We use resistors as control valves by controlling the resistors drag factor from outside
     #
-    ## pressure drop equation
+    ## pressure drop equation (eqn. 21 Station_Model_Paper.pdf)
     # we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interaval [0,100]
     m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
     #
