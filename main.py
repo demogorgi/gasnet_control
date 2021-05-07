@@ -23,7 +23,7 @@ with open(path.join(data_path, 'init_decisions.yml')) as file:
 
 simulator_step.counter = 0
 for i in range(numSteps):
-    print("step %d" % i)
+    print("\nstep %d" % i)
 
     # dirty hack to randomly generate nominations
     #if i > 0 and (i+1) % config['nomination_freq'] == 0 and (i+1) < numSteps:
