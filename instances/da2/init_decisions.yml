@@ -3,16 +3,16 @@ exit_nom:
     X:
         XN:
             0: -500
-        XH: 
+        XH:
             0: -600
 
 entry_nom:
     S:
         EN_aux0^EN:
-            0: 1100
+            -16: 1100
             #10: 0
         EH_aux0^EH:
-            0: 0
+            -16: 0
             #10: 1100
 
 # Decisions of the dispatcher agent
@@ -26,7 +26,7 @@ va:
 zeta:
     RE:
         N25^N26_aux:
-            0: 120000000000000
+            0: 100
             #10: 191
 
 gas:

@@ -183,12 +183,9 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     m.addConstrs((var_node_Qo_in[e] <= no.entry_flow_bound[e] for e in no.entries), name='entry_flow_model')
     m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nomination_check')
-    print("--->")
-    print([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits])
-    print("--->")
-    print([joiner(s) for s in co.special])
-    print([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special])
-    print("--->")
+    print("Exit nominations: {}".format([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]))
+    print("Entry nominations decision for this step ({}) was taken in step {}: ".format(t, (t//config['nomination_freq']-2)*config['nomination_freq']), [get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special])
+    print(agent_decisions["entry_nom"]["S"])
     #
     #
     ### TRACKING OF RELEVANT VALUES ###
