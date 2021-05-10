@@ -169,4 +169,9 @@ def xip(i):
 
 # ... and resistors (according to eqn. 21 Station_Model_Paper)
 def xir(i,zeta):
+    # Hier sind Regler wirklichkeitsnah modelliert. Es wird die Ursache der Druckveringerung (eine Verengung) und nicht die Wirkung (z.B. die Druckveringerung selbst) gesteuert.
+    # Das ist anders als bei der Simone-orientierten Reglermodellierung im Station_Model_Paper, die drei Binärvariablen benötigt.
+    # Bei der vorliegenden Modellierung ist es so, dass der Regler in beide Richtungen gleichermaßen regeln kann. Die Engstelle ist in symmetrisch.
+    # Wenn eine Regelung nicht in beide Richtungen erwünscht ist, kann eine Rückschlagklappe hinzugefügt werden.
+    # Eine Regelung in beide Richtungen ist mit der Simone-orientierten Modellierung nicht möglich.
     return zeta / ( 2 * A(co.diameter[i]) );
