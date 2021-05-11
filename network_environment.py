@@ -21,11 +21,11 @@ from tf_agents.trajectories import time_step as ts
 #tf.compat.v1.enable_v2_behavior()
 
 # own inputs
+import gasnet_control.instances.da2.connections
 from urmel import *
 from model import *
 import functions as funcs
 from params import *
-
 
 
 class GasNetworkEnv(py_environment.PyEnvironment):
@@ -34,8 +34,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         ### define the action specificities
         self._convert_action = convert_action
         # analyse initial decisions to extract values
-        with open(path.join(data_path, 'init_decisions.yml')) as file:
-            init_decisions = yaml.load(file, Loader=yaml.FullLoader)
+        with open(path.join(data_path, 'init_decisions.yml')) as init_file:
+            init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
 
         # safe the control variable names for later mapping
         self._valves = list(init_decisions["va"]["VA"].keys())
@@ -52,8 +52,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._discretization = discretization_steps
         control_minima = [0]*n_control_vars
         valve_maxima = [1]*n_valves
-        # TODO: define reasonable values for upper resistor bounds
-        resistor_maxima = [0]*n_resistors
+        # upper resistor bounds [0, discretization] (in reality, [0, 100])
+        resistor_maxima = [discretization_steps]*n_resistors
         compressor_maxima = [discretization_steps]*n_compressors
         control_maxima = valve_maxima + resistor_maxima + compressor_maxima
 
@@ -92,11 +92,18 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         n_entries_exits = len(entries_exits_list)
 
         ## extract the network state specifities
-        # get all nodes and pipes
-        nodes_list = no.nodes
-        pipes_list = co.pipes
-        non_pipes_list = co.non_pipes
-        # nodes_list = [node for node in no.nodes if 'aux' not in node]
+        # get all nodes and pipes but exclude helper elements
+        # all nodes in the relevant network
+        nodes_list = [node for node in no.nodes if node.startswith('N')]
+        # entries and exits of the relevant network
+        nodes_list += no.nodes_with_bds
+        # only (non-)pipes where one element starts with 'N' are observable
+        pipes_list = [pipe for pipe in co.pipes
+                      if pipe[0].startswith('N') or pipe[1].startswith('N')]
+        non_pipes_list = [non_pipe for non_pipe in co.non_pipes
+                          if non_pipe[0].startswith('N') or
+                          non_pipe[1].startswith('N')]
+
         n_nodes = len(nodes_list)
         n_pipes = len(pipes_list)
         n_non_pipes = len(non_pipes_list)
@@ -134,8 +141,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             maximum=np.array(observation_maxima),
             name='observation'
         )
+
+        self._nodes = nodes_list
+        self._pipes = pipes_list
+        self._non_pipes = non_pipes_list
         # define the initial state (initial network + nominations)
-        # TODO: insert a vector with initial values for all observations
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
@@ -156,13 +166,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 nomination = nominations_t0[count]
             nominations_t1 += [nomination]
 
-        # extract the initial node pressure and inflow as well as the
+        # extract the initial node pressure and pipe inflow as well as the
         # initial values for non pipe elements
-        states = funcs.get_init_scenario()
-        node_pressures = [states[-1]["p"][node] for node in no.nodes]
-        pipe_inflows = [states[-1]["q_in"][pipe] for pipe in co.pipes]
-        non_pipe_values = [states[-1]["q"][non_pipe]
-                           for non_pipe in co.non_pipes]
+        init_states = funcs.get_init_scenario()
+        node_pressures = [init_states[-1]["p"][node] for node in nodes_list]
+        pipe_inflows = [init_states[-1]["q_in"][pipe] for pipe in pipes_list]
+        non_pipe_values = [init_states[-1]["q"][non_pipe]
+                           for non_pipe in non_pipes_list]
 
         self._state = np.array(
                         nominations_t0 + nominations_t1 + node_pressures + \
@@ -192,8 +202,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
     def _reset(self):
         # TODO: check functionality in learning
         # extract initial decisions/values
-        with open(path.join(data_path, 'init_decisions.yml')) as file:
-            init_decisions = yaml.load(file, Loader=yaml.FullLoader)
+        with open(path.join(data_path, 'init_decisions.yml')) as init_file:
+            init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
@@ -214,11 +224,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         # extract the initial node pressure and inflow as well as the
         # initial values for non pipe elements
-        states = funcs.get_init_scenario()
-        node_pressures = [states[-1]["p"][node] for node in no.nodes]
-        pipe_inflows = [states[-1]["q_in"][pipe] for pipe in co.pipes]
-        non_pipe_values = [states[-1]["q"][non_pipe]
-                           for non_pipe in co.non_pipes]
+        init_states = funcs.get_init_scenario()
+        node_pressures = [init_states[-1]["p"][node] for node in self._nodes]
+        pipe_inflows = [init_states[-1]["q_in"][pipe] for pipe in self._pipes]
+        non_pipe_values = [init_states[-1]["q"][non_pipe]
+                           for non_pipe in self._non_pipes]
 
         self._state = np.array(
                         nominations_t0 + nominations_t1 + node_pressures + \
@@ -241,8 +251,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         ### simulate one step
         # convert the action vector such that urmel can use it
         # first get the necessary dictionary syntax
-        with open(path.join(data_path, 'init_decisions.yml')) as file:
-            agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
+        with open(path.join(data_path, 'init_decisions.yml')) as dec_file:
+            agent_decisions = yaml.load(dec_file, Loader=yaml.FullLoader)
 
         # second handle all actions and convert it to the format
         step = self._action_counter
@@ -253,14 +263,18 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             action_list = actions
         n_valves = len(self._valves)
         n_resistors = len(self._resistors)
+
+        # apply the actions; first valves, then resistors and then compressors
         for action_counter, action in enumerate(action_list):
             if action_counter < n_valves:
+                # valves can only be 0 or 1
                 valve = self._valves[action_counter]
                 agent_decisions["va"]["VA"][valve][step] = action
             elif action_counter < n_valves + n_resistors:
+                # resistor action has to be converted to the discrete [0, 100]
                 resistor = self._resistors[action_counter - n_valves]
-                # TODO: clarify resistor handling and value calculation
-                agent_decisions["zeta"]["RE"][resistor][step] = 120
+                resistor_value = 100/self._discretization * action
+                agent_decisions["zeta"]["RE"][resistor][step] = resistor_value
             else:
                 compressor_index = action_counter - n_valves - n_resistors
                 compressor = self._compressors[compressor_index]
@@ -275,13 +289,15 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         solution = simulator_step(agent_decisions, step, "sim")
 
-        # extract the nominations for updated state
+        # extract the nominations for updating the state
         nominations_t0 = []
         for count, node in enumerate(no.exits + co.special):
             try:
+                # nodes are represented as strings
                 if type(node) == str:
                     nomination = agent_decisions["exit_nom"]["X"][node][
                         step + 1]
+                # pipes and non pipes are represented as tuples of strings
                 else:
                     key = joiner(node)
                     nomination = agent_decisions["entry_nom"]["S"][key][
@@ -297,9 +313,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
         for count, node in enumerate(no.exits + co.special):
             try:
+                # nodes are represented as strings
                 if type(node) == str:
                     nomination = agent_decisions["exit_nom"]["X"][node][
                         step + 2]
+                # pipes and non pipes as tuples of strings
                 else:
                     key = joiner(node)
                     nomination = agent_decisions["entry_nom"]["S"][key][
@@ -316,21 +334,25 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         else:
             reward = 100
             for variable_name in solution.keys():
-                if variable_name == "scenario_balance_TA":
-                    reward -= solution[variable_name]
-                elif variable_name.endswith("b_pressure_violation_DA"):
-                    reward -= solution[variable_name]
+                if variable_name.startswith("nom_entry_slack_DA"):
+                    reward -= solution[variable_name]**2
+                elif any(map(variable_name.__contains__, no.exits)):
+                    if "b_pressure_violation_DA" in variable_name:
+                        violation = solution[variable_name]
+                        if violation > 0:
+                            reward -= violation**2
+
 
             # update the state variables
             node_pressures = [solution["var_node_p[%s]" % node]
-                              for node in no.nodes]
+                              for node in self._nodes]
             pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
-                            for pipe in co.pipes]
+                            for pipe in self._pipes]
             non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
-                               for non_pipe in co.non_pipes]
+                               for non_pipe in self._non_pipes]
 
             self._state = np.array(
-                nominations_t0 + nominations_t1 + node_pressures + \
+                nominations_t0 + nominations_t1 + node_pressures +
                 pipe_inflows + non_pipe_values
                 , np.float32)
 
