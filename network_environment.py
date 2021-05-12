@@ -8,6 +8,7 @@ import abc
 import tensorflow as tf
 import numpy as np
 import itertools
+import random
 
 from tf_agents.environments import py_environment
 from tf_agents.environments import tf_environment
@@ -30,9 +31,15 @@ from params import *
 
 class GasNetworkEnv(py_environment.PyEnvironment):
 
-    def __init__(self, discretization_steps, convert_action=True):
+    def __init__(self, discretization_steps=10, convert_action=True,
+                 steps_per_agent_step=8, max_agent_steps=1,
+                 random_nominations=True):
         ### define the action specificities
         self._convert_action = convert_action
+        self._steps_per_agent_steps = steps_per_agent_step
+        self._max_agent_steps = max_agent_steps
+        self._random_nominations = random_nominations
+
         # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
             init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
@@ -149,22 +156,51 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
-        nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)][0]
-                           for supply in co.special]
+        if self._random_nominations:
+            nomination_sum = sum(nominations_t0)
+            n_entries = len(no.nodes_with_bds) - len(no.exits)
+            breaks = random.choices(range(nomination_sum), k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+
+            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+        else:
+            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+                               [0] for supply in co.special]
         # length of nominations has to be the same as in the observation specs
         assert(len(nominations_t0) == n_entries_exits)
 
         nominations_t1 = []
-        for count, node in enumerate(no.exits + co.special):
-            try:
-                if type(node) == str:
-                    nomination = init_decisions["exit_nom"]["X"][node][1]
-                else:
-                    key = joiner(node)
-                    nomination = init_decisions["entry_nom"]["S"][key][1]
-            except KeyError:
-                nomination = nominations_t0[count]
-            nominations_t1 += [nomination]
+
+        if self._random_nominations:
+            for count, node in enumerate(no.exits):
+                try:
+                    nomination = init_decisions["exit_nom"]["X"][node]\
+                        [self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
+
+            breaks = random.choice(range(nomination_sum),
+                                   k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+        else:
+            for count, node in enumerate(no.exits + co.special):
+                try:
+                    if type(node) == str:
+                        nomination = init_decisions["exit_nom"]["X"][node]\
+                            [self._steps_per_agent_steps]
+                    else:
+                        key = joiner(node)
+                        nomination = init_decisions["entry_nom"]["S"][key]\
+                            [self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
 
         # extract the initial node pressure and pipe inflow as well as the
         # initial values for non pipe elements
@@ -207,20 +243,50 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
-        nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)][0]
-                           for supply in co.special]
+
+        if self._random_nominations:
+            nomination_sum = sum(nominations_t0)
+            n_entries = len(no.nodes_with_bds) - len(no.exits)
+            breaks = random.choices(range(nomination_sum), k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+
+            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+        else:
+            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+                               [0] for supply in co.special]
 
         nominations_t1 = []
-        for count, node in enumerate(no.exits + co.special):
-            try:
-                if type(node) == str:
-                    nomination = init_decisions["exit_nom"]["X"][node][1]
-                else:
-                    key = joiner(node)
-                    nomination = init_decisions["entry_nom"]["S"][key][1]
-            except KeyError:
-                nomination = nominations_t0[count]
-            nominations_t1 += [nomination]
+
+        if self._random_nominations:
+            for count, node in enumerate(no.exits):
+                try:
+                    nomination = init_decisions["exit_nom"]["X"][node]\
+                        [self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
+
+            breaks = random.choice(range(nomination_sum),
+                                   k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+        else:
+            for count, node in enumerate(no.exits + co.special):
+                try:
+                    if type(node) == str:
+                        nomination = init_decisions["exit_nom"]["X"][node]\
+                            [self._steps_per_agent_steps]
+                    else:
+                        key = joiner(node)
+                        nomination = init_decisions["entry_nom"]["S"][key]\
+                            [self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
 
         # extract the initial node pressure and inflow as well as the
         # initial values for non pipe elements
@@ -255,7 +321,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             agent_decisions = yaml.load(dec_file, Loader=yaml.FullLoader)
 
         # second handle all actions and convert it to the format
-        step = self._action_counter
+        big_step = self._action_counter
 
         if self._convert_action:
             action_list = list(self._action_mapping[np.int(actions)])
@@ -264,104 +330,140 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         n_valves = len(self._valves)
         n_resistors = len(self._resistors)
 
-        # apply the actions; first valves, then resistors and then compressors
-        for action_counter, action in enumerate(action_list):
-            if action_counter < n_valves:
-                # valves can only be 0 or 1
-                valve = self._valves[action_counter]
-                agent_decisions["va"]["VA"][valve][step] = action
-            elif action_counter < n_valves + n_resistors:
-                # resistor action has to be converted to the discrete [0, 100]
-                resistor = self._resistors[action_counter - n_valves]
-                resistor_value = 100/self._discretization * action
-                agent_decisions["zeta"]["RE"][resistor][step] = resistor_value
-            else:
-                compressor_index = action_counter - n_valves - n_resistors
-                compressor = self._compressors[compressor_index]
-                if action > 10e-3:
-                    activation = 1
-                    efficiency = 1/self._discretization * action
-                else:
-                    activation = 0
-                    efficiency = 0.0
-                agent_decisions["gas"]["CS"][compressor][step] = efficiency
-                agent_decisions["gas"]["CS"][compressor][step] = activation
+        agent_step_reward = 0
 
-        solution = simulator_step(agent_decisions, step, "sim")
+        step = 0
+        for small_step in range(self._steps_per_agent_steps):
+            step = big_step * self._steps_per_agent_steps + small_step
+            # apply the actions; first valves, then resistors, then compressors
+            for action_counter, action in enumerate(action_list):
+                if action_counter < n_valves:
+                    # valves can only be 0 or 1
+                    valve = self._valves[action_counter]
+                    agent_decisions["va"]["VA"][valve][step] = action
+                elif action_counter < n_valves + n_resistors:
+                    # resistor action has to be converted to discrete [0, 100]
+                    resistor = self._resistors[action_counter - n_valves]
+                    resis_value = 100/self._discretization * action
+                    agent_decisions["zeta"]["RE"][resistor][step] = resis_value
+                else:
+                    compressor_index = action_counter - n_valves - n_resistors
+                    compressor = self._compressors[compressor_index]
+                    if action > 10e-3:
+                        activation = 1
+                        efficiency = 1/self._discretization * action
+                    else:
+                        activation = 0
+                        efficiency = 0.0
+                    agent_decisions["gas"]["CS"][compressor][step] = efficiency
+                    agent_decisions["gas"]["CS"][compressor][step] = activation
+
+            solution = simulator_step(agent_decisions, step, "sim")
+
+            # if the resulting problem is infeasible we reward 0
+            if solution is None:
+                step_reward = 0
+                self._episode_ended = True
+            # otherwise we calculate the reward as 100 - the violations
+            else:
+                # if nothing is violated, we reward 100
+                step_reward = 100
+                for variable_name in solution.keys():
+                    # deviations from entry flows have to be penalized
+                    if variable_name.startswith("nom_entry_slack_DA"):
+                        step_reward -= solution[variable_name] ** 2
+                    # deviations from exit pressures/nomin. to be penalized
+                    elif any(map(variable_name.__contains__, no.exits)):
+                        if "b_pressure_violation_DA" in variable_name:
+                            violation = solution[variable_name]
+                            # positive slacks = violation
+                            if violation > 0:
+                                step_reward -= violation ** 2
+
+            agent_step_reward += step_reward
+            if self._episode_ended:
+                break
 
         # extract the nominations for updating the state
-        nominations_t0 = []
-        for count, node in enumerate(no.exits + co.special):
-            try:
-                # nodes are represented as strings
-                if type(node) == str:
-                    nomination = agent_decisions["exit_nom"]["X"][node][
-                        step + 1]
-                # pipes and non pipes are represented as tuples of strings
-                else:
-                    key = joiner(node)
-                    nomination = agent_decisions["entry_nom"]["S"][key][
-                        step + 1]
-            except KeyError:
-                if type(node) == str:
-                    nomination = agent_decisions["exit_nom"]["X"][node][0]
-                else:
-                    key = joiner(node)
-                    nomination = agent_decisions["entry_nom"]["S"][key][0]
-            nominations_t0 += [nomination]
+        n_entries_exits = len(no.nodes_with_bds)
+        nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
+        # nominations_t0 = []
+        # for count, node in enumerate(no.exits + co.special):
+        #     try:
+        #         # nodes are represented as strings
+        #         if type(node) == str:
+        #             nomination = agent_decisions["exit_nom"]["X"][node][
+        #                 step + 1]
+        #         # pipes and non pipes are represented as tuples of strings
+        #         else:
+        #             key = joiner(node)
+        #             nomination = agent_decisions["entry_nom"]["S"][key][
+        #                 step + 1]
+        #     except KeyError:
+        #         if type(node) == str:
+        #             nomination = agent_decisions["exit_nom"]["X"][node][0]
+        #         else:
+        #             key = joiner(node)
+        #             nomination = agent_decisions["entry_nom"]["S"][key][0]
+        #     nominations_t0 += [nomination]
 
         nominations_t1 = []
-        for count, node in enumerate(no.exits + co.special):
-            try:
-                # nodes are represented as strings
-                if type(node) == str:
-                    nomination = agent_decisions["exit_nom"]["X"][node][
-                        step + 2]
-                # pipes and non pipes as tuples of strings
-                else:
-                    key = joiner(node)
-                    nomination = agent_decisions["entry_nom"]["S"][key][
-                        step + 2]
-            except KeyError:
-                nomination = nominations_t0[count]
-            nominations_t1 += [nomination]
+        if self._random_nominations:
+            for count, node in enumerate(no.exits):
+                try:
+                    nomination = agent_decisions["exit_nom"]["X"][node]\
+                        [(self._action_counter + 1) *
+                         self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
 
-        # if the resulting problem is infeasible we reward 0
-        if solution is None:
-            reward = 0
-            self._episode_ended = True
-        # otherwise we calculate the reward as 100 - the violations
+            nomination_sum = sum(nominations_t1)
+            n_entries = n_entries_exits - len(no.exits)
+            breaks = random.choice(range(nomination_sum),
+                                   k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
         else:
-            reward = 100
-            for variable_name in solution.keys():
-                if variable_name.startswith("nom_entry_slack_DA"):
-                    reward -= solution[variable_name]**2
-                elif any(map(variable_name.__contains__, no.exits)):
-                    if "b_pressure_violation_DA" in variable_name:
-                        violation = solution[variable_name]
-                        if violation > 0:
-                            reward -= violation**2
+            for count, node in enumerate(no.exits + co.special):
+                try:
+                    if type(node) == str:
+                        nomination = agent_decisions["exit_nom"]["X"][node]\
+                            [(self._action_counter + 1) *
+                             self._steps_per_agent_steps]
+                    else:
+                        key = joiner(node)
+                        nomination = agent_decisions["entry_nom"]["S"][key]\
+                            [(self._action_counter + 1) *
+                             self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
 
+        # update the state variables
+        node_pressures = [solution["var_node_p[%s]" % node]
+                          for node in self._nodes]
+        pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
+                        for pipe in self._pipes]
+        non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
+                           for non_pipe in self._non_pipes]
 
-            # update the state variables
-            node_pressures = [solution["var_node_p[%s]" % node]
-                              for node in self._nodes]
-            pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
-                            for pipe in self._pipes]
-            non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
-                               for non_pipe in self._non_pipes]
-
-            self._state = np.array(
-                nominations_t0 + nominations_t1 + node_pressures +
-                pipe_inflows + non_pipe_values
-                , np.float32)
+        self._state = np.array(
+            nominations_t0 + nominations_t1 + node_pressures +
+            pipe_inflows + non_pipe_values
+            , np.float32)
 
         self._action_counter += 1
 
         # TODO: Implement a reasonable time step counter for the max amount of
-        # TODO: steps as below
-        if self._action_counter >= 8 or self._episode_ended:
+        # steps as below
+        if self._action_counter >= self._max_agent_steps \
+                or self._episode_ended:
+
             self._episode_ended = True
-            return ts.termination(self._state, reward=reward)
+            return ts.termination(self._state, reward=agent_step_reward)
         else:
-            return ts.transition(self._state, reward=reward, discount=1.0)
+            return ts.transition(self._state, reward=agent_step_reward,
+                                 discount=1.0)
