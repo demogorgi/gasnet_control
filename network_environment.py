@@ -33,12 +33,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
-                 random_nominations=True):
+                 random_nominations=True, convert_reward=False):
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
         self._max_agent_steps = max_agent_steps
         self._random_nominations = random_nominations
+        self._convert_reward = convert_reward
 
         # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
@@ -157,9 +158,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
         if self._random_nominations:
-            nomination_sum = sum(nominations_t0)
+            nomination_sum = int(np.abs(sum(nominations_t0)))
             n_entries = len(no.nodes_with_bds) - len(no.exits)
-            breaks = random.choices(range(nomination_sum), k=n_entries - 1)
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
+                                    k=n_entries - 1)
             breaks.sort()
             breaks = [0] + breaks + [nomination_sum]
 
@@ -182,7 +184,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
 
-            breaks = random.choice(range(nomination_sum),
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
                                    k=n_entries - 1)
             breaks.sort()
             breaks = [0] + breaks + [nomination_sum]
@@ -245,9 +247,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                           for ex in no.exits]
 
         if self._random_nominations:
-            nomination_sum = sum(nominations_t0)
+            nomination_sum = int(np.abs(sum(nominations_t0)))
             n_entries = len(no.nodes_with_bds) - len(no.exits)
-            breaks = random.choices(range(nomination_sum), k=n_entries - 1)
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
+                                    k=n_entries - 1)
             breaks.sort()
             breaks = [0] + breaks + [nomination_sum]
 
@@ -268,7 +271,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
 
-            breaks = random.choice(range(nomination_sum),
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
                                    k=n_entries - 1)
             breaks.sort()
             breaks = [0] + breaks + [nomination_sum]
@@ -362,23 +365,31 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
             # if the resulting problem is infeasible we reward 0
             if solution is None:
-                step_reward = 0
+                if self._convert_reward:
+                    agent_step_reward = -1
+                    step_reward = 0
+                else:
+                    agent_step_reward = -50000
+                    step_reward = 0
                 self._episode_ended = True
             # otherwise we calculate the reward as 100 - the violations
             else:
                 # if nothing is violated, we reward 100
-                step_reward = 100
+                step_reward = 10000
                 for variable_name in solution.keys():
                     # deviations from entry flows have to be penalized
                     if variable_name.startswith("nom_entry_slack_DA"):
-                        step_reward -= solution[variable_name] ** 2
+                        step_reward -= np.abs(solution[variable_name]) #** 2
                     # deviations from exit pressures/nomin. to be penalized
                     elif any(map(variable_name.__contains__, no.exits)):
                         if "b_pressure_violation_DA" in variable_name:
                             violation = solution[variable_name]
                             # positive slacks = violation
                             if violation > 0:
-                                step_reward -= violation ** 2
+                                step_reward -= violation #** 2
+                if self._convert_reward:
+                    step_reward /= 10000
+                    step_reward /= self._steps_per_agent_steps
 
             agent_step_reward += step_reward
             if self._episode_ended:
@@ -418,9 +429,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
 
-            nomination_sum = sum(nominations_t1)
+            nomination_sum = int(np.abs(sum(nominations_t1)))
             n_entries = n_entries_exits - len(no.exits)
-            breaks = random.choice(range(nomination_sum),
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
                                    k=n_entries - 1)
             breaks.sort()
             breaks = [0] + breaks + [nomination_sum]
@@ -443,15 +454,26 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 nominations_t1 += [nomination]
 
         # update the state variables
-        node_pressures = [solution["var_node_p[%s]" % node]
-                          for node in self._nodes]
-        pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
-                        for pipe in self._pipes]
-        non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
-                           for non_pipe in self._non_pipes]
+        if solution is None:
+            node_pressures = list(self._state[
+                2*n_entries_exits:2*n_entries_exits + len(self._nodes)
+            ])
+            pipe_inflows = list(self._state[
+                -len(self._pipes) - len(self._non_pipes) : -len(self._non_pipes)
+            ])
+            non_pipe_values = list(self._state[
+                -len(self._non_pipes):
+            ])
+        else:
+            node_pressures = [solution["var_node_p[%s]" % node]
+                              for node in self._nodes]
+            pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
+                            for pipe in self._pipes]
+            non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
+                               for non_pipe in self._non_pipes]
 
         self._state = np.array(
-            nominations_t0 + nominations_t1 + node_pressures +
+            list(nominations_t0) + nominations_t1 + node_pressures +
             pipe_inflows + non_pipe_values
             , np.float32)
 
