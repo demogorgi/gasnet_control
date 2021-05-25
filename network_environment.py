@@ -33,13 +33,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
-                 random_nominations=True, convert_reward=False):
+                 random_nominations=True):
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
         self._max_agent_steps = max_agent_steps
         self._random_nominations = random_nominations
-        self._convert_reward = convert_reward
+        self._entry_offset = self._steps_per_agent_steps * (-2)
 
         # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
@@ -169,7 +169,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                for break_step in range(1, n_entries + 1)]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
-                               [0] for supply in co.special]
+                               [0 + self._entry_offset]
+                               for supply in co.special]
         # length of nominations has to be the same as in the observation specs
         assert(len(nominations_t0) == n_entries_exits)
 
@@ -199,7 +200,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     else:
                         key = joiner(node)
                         nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps]
+                            [self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
@@ -217,13 +218,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         pipe_inflows + non_pipe_values
                         , np.float32)
 
-        ## debugging
-        for i, val in enumerate(self._state):
-            if val > observation_maxima[i]:
-                print(f"error detected at index {i}")
-            if val < observation_minima[i]:
-                print(f"error detected at index {i}")
-        ## end of debugging
+        # ## debugging
+        # for i, val in enumerate(self._state):
+        #     if val > observation_maxima[i]:
+        #         print(f"error detected at index {i}")
+        #     if val < observation_minima[i]:
+        #         print(f"error detected at index {i}")
+        # ## end of debugging
         self._episode_ended = False
 
         # counter to come to an end
@@ -258,7 +259,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                for break_step in range(1, n_entries + 1)]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
-                               [0] for supply in co.special]
+                               [0 + self._entry_offset]
+                               for supply in co.special]
 
         nominations_t1 = []
 
@@ -286,7 +288,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     else:
                         key = joiner(node)
                         nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps]
+                            [self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
@@ -318,14 +320,40 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             return self.reset()
 
         ### simulate one step
+        big_step = self._action_counter
         # convert the action vector such that urmel can use it
         # first get the necessary dictionary syntax
         with open(path.join(data_path, 'init_decisions.yml')) as dec_file:
             agent_decisions = yaml.load(dec_file, Loader=yaml.FullLoader)
 
-        # second handle all actions and convert it to the format
-        big_step = self._action_counter
+        # if random nominations were required, insert it into agent_decisions
+        # define the amount of entries and exit
+        n_entries_exits = len(no.nodes_with_bds)
+        # define the number of entries and exits
+        n_exits = len(no.exits)
+        n_entries = n_entries_exits - n_exits
+        current_entry_nominations = self._state[n_exits:n_entries_exits]
+        current_exit_nominations = self._state[:n_exits]
 
+        if self._random_nominations:
+            # fill the exit nominations if not given in the file
+            for count, node in enumerate(no.exits):
+                try:
+                    nomination = agent_decisions["exit_nom"]["X"][node]\
+                        [big_step * self._steps_per_agent_steps]
+                except KeyError:
+                    agent_decisions["exit_nom"]["X"][node]\
+                        [big_step * self._steps_per_agent_steps] = \
+                        current_exit_nominations[count]
+            # fill the entry nominations as calculated randomly before
+            for count, node in enumerate(co.special):
+                key = joiner(node)
+                agent_decisions["entry_nom"]["S"][key] \
+                    [big_step * self._steps_per_agent_steps +
+                     self._entry_offset] = \
+                    current_entry_nominations[count]
+
+        # second handle all actions and convert it to the format
         if self._convert_action:
             action_list = list(self._action_mapping[np.int(actions)])
         else:
@@ -363,40 +391,70 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
             solution = simulator_step(agent_decisions, step, "sim")
 
-            # if the resulting problem is infeasible we reward 0
+            # if the resulting problem is infeasible we reward -1 for the whole
+            # agent step
             if solution is None:
-                if self._convert_reward:
-                    agent_step_reward = -1
-                    step_reward = 0
-                else:
-                    agent_step_reward = -50000
-                    step_reward = 0
+                agent_step_reward = -1
+                step_reward = 0
                 self._episode_ended = True
-            # otherwise we calculate the reward as 100 - the violations
+            # otherwise we calculate the reward as 1 - the weighted violations
+            # divided by the amount of simulation steps per agent step
             else:
-                # if nothing is violated, we reward 100
-                step_reward = 10000
+                # if nothing is violated, we reward 1 for the simulation step
+                step_reward = 1.0
+
+                # one can weigh the impact of exit to entry violations
+                # ratio of 10 means an exit violation has 10 times more
+                # percentage impact than an entry violation of the same perc.
+                exit_entry_impact_ratio = 10
+
+                # for norming the violations with their upper bound
+                ub_entry_violation = np.abs(int(np.sum(
+                    current_entry_nominations
+                )))
+                ub_exit_violation = 430
+
+                # define the resulting multipliers (see thesis)
+                entry_multiplier = 1 / (n_entries +
+                                        exit_entry_impact_ratio * n_exits)
+                exit_multiplier = 1 / (n_entries / exit_entry_impact_ratio +
+                                       n_exits)
+
+                # iterate through variables to identify relevant ones
                 for variable_name in solution.keys():
                     # deviations from entry flows have to be penalized
                     if variable_name.startswith("nom_entry_slack_DA"):
-                        step_reward -= np.abs(solution[variable_name]) #** 2
+                        # define the violation
+                        violation = np.abs(solution[variable_name])
+                        # norm the violation
+                        violation /= ub_entry_violation
+                        # weigh the violation
+                        violation *= entry_multiplier
+                        # subtract it from the initial reward
+                        step_reward -= violation
                     # deviations from exit pressures/nomin. to be penalized
                     elif any(map(variable_name.__contains__, no.exits)):
                         if "b_pressure_violation_DA" in variable_name:
+                            # define the potential violation
                             violation = solution[variable_name]
-                            # positive slacks = violation
+                            # positive slacks = violation -> identify it
                             if violation > 0:
-                                step_reward -= violation #** 2
-                if self._convert_reward:
-                    step_reward /= 10000
-                    step_reward /= self._steps_per_agent_steps
+                                # norm the violation
+                                violation /= ub_exit_violation
+                                # weigh the violation
+                                violation *= exit_multiplier
+                                # subtract it from the initial reward
+                                step_reward -= violation
 
+                # divide the step reward by the amount of simulation steps
+                step_reward /= self._steps_per_agent_steps
+
+            # with the upper procedure agent_step_reward is in [0, 1]
             agent_step_reward += step_reward
             if self._episode_ended:
                 break
 
         # extract the nominations for updating the state
-        n_entries_exits = len(no.nodes_with_bds)
         nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
         # nominations_t0 = []
         # for count, node in enumerate(no.exits + co.special):
@@ -479,8 +537,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         self._action_counter += 1
 
-        # TODO: Implement a reasonable time step counter for the max amount of
-        # steps as below
+        # test if the episode has ended by infeasibility or maximal amount of
+        # steps
         if self._action_counter >= self._max_agent_steps \
                 or self._episode_ended:
 

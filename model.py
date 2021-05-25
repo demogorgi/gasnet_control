@@ -35,6 +35,7 @@ def get_agent_decision(deep_agent_decision,i):
 def simulate(agent_decisions,compressors,t,dt):
     # Model
     m = gp.Model()
+    m.setParam("LogToConsole", 0)
 
 	#### From here on the variables have to be added. ####
 
@@ -106,6 +107,7 @@ def simulate(agent_decisions,compressors,t,dt):
     ## constraints only to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
     m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nome')
+    #m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special), name='nome')
     #
     ## constraints only to track dispatcher agent's decisions
     m.addConstrs((va_DA[v] == get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='va_mode')
@@ -184,14 +186,16 @@ def simulate(agent_decisions,compressors,t,dt):
     #
     m.addConstrs((var_node_Qo_in[e] <= no.entry_flow_bound[e] for e in no.entries), name='entry_flow_model')
     m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nomination_check')
-    print("Exit nominations: {}".format([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]))
-    print("Entry nominations decision for this step ({}) was taken in step {}: ".format(t, (t//config['nomination_freq']-2)*config['nomination_freq']), [get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special])
-    print(agent_decisions["entry_nom"]["S"])
+    #m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special), name='nomination_check')
+    #print("Exit nominations: {}".format([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]))
+    #print("Entry nominations decision for this step ({}) was taken in step {}: ".format(t, (t//config['nomination_freq']-2)*config['nomination_freq']), [get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special])
+    #print(agent_decisions["entry_nom"]["S"])
     #
     #
     ### TRACKING OF RELEVANT VALUES ###
     #
     m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
+    #m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
     m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
     m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.nodes), name='track_ub_pressure_violation')
     m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.nodes), name='track_lb_pressure_violation')
