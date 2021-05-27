@@ -438,7 +438,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 # one can weigh the impact of exit to entry violations
                 # ratio of 10 means an exit violation has 10 times more
                 # percentage impact than an entry violation of the same perc.
-                exit_entry_impact_ratio = 10
+                exit_entry_impact_ratio = 2
 
                 # for norming the violations with their upper bound
                 ub_entry_violation = np.abs(int(np.sum(
