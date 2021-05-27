@@ -6,14 +6,19 @@ import network_environment
 from tf_agents.environments import tf_py_environment
 
 # hyperparameters
-num_eval_agent_steps = 4
+num_eval_agent_steps = 6
 
 simulations_per_agent_step = 8
 
 # evaluation procedure
 # import the policy accomplished through training
 temp_dir = os.getcwd() + '/instances'
-policy_dir = os.path.join(temp_dir, 'policy')
+policy_dir = os.path.join(temp_dir, "policy_" +\
+                          f"iters{30}_" +\
+                          f"rate1e-5_" +\
+                          f"clip{1}_" +\
+                          f"update{250}_" +\
+                          f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
 # define the environment with nominations from file
@@ -29,13 +34,15 @@ eval_py_env = network_environment.GasNetworkEnv(
 eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
 # iterate the amount of steps
+time_step = eval_env.reset()
+step = 0
 for _ in range(num_eval_agent_steps):
-
-    time_step = eval_env.reset()
+    print("#"*15 + f"Evaluation of step {step}" + "#"*15)
     if not time_step.is_last():
         action_step = trained_policy.action(time_step)
         time_step = eval_env.step(action_step.action)
-
+    print("#"*15 + f"End of evaluation of step {step}" + "#"*9 + "\n\n")
+    step += 1
 
 
 

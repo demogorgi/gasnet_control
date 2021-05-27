@@ -365,6 +365,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         agent_step_reward = 0
 
         step = 0
+        agent_step_flow_violation = 0
+        pressure_violation = 0
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
             # apply the actions; first valves, then resistors, then compressors
@@ -390,10 +392,34 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
                     agent_decisions["gas"]["CS"][compressor][step] = activation
 
-            # print the action dictionary once for each agent step if desired
+            # print the actions once for each agent step if desired
             if self._print_actions:
                 if step % self._steps_per_agent_steps == 0:
-                    print(agent_decisions)
+                    for action_counter, action in enumerate(action_list):
+                        if action_counter < n_valves:
+                            valve = self._valves[action_counter]
+                            print(f"valve {valve} is "
+                                  f"{'' if action == 1 else 'not '}activated")
+                        elif action_counter < n_valves + n_resistors:
+                            resistor = self._resistors[
+                                action_counter - n_valves]
+                            resis_value = 100 / self._discretization * action
+                            print(f"resistor {resistor} works at efficiency"
+                                  f" of {resis_value}")
+                        else:
+                            compressor_index = action_counter - \
+                                               n_valves - n_resistors
+                            compressor = self._compressors[compressor_index]
+                            if action > 10e-3:
+                                activation = 1
+                                efficiency = 1 / self._discretization * action
+                            else:
+                                activation = 0
+                                efficiency = 0.0
+                            print(f"compressor {compressor} is "
+                                  f"{'' if activation == 1 else 'not'}"
+                                  f"activated"
+                                  f"{'' if activation == 0 else ' with efficiency ' + str(efficiency)}")
 
             solution = simulator_step(agent_decisions, step, "sim")
 
@@ -430,6 +456,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 for variable_name in solution.keys():
                     # deviations from entry flows have to be penalized
                     if variable_name.startswith("nom_entry_slack_DA"):
+                        # sum up all pressure violations (may cancel out in
+                        # one agent step. Intended!)
+                        agent_step_flow_violation += solution[variable_name]
                         # define the violation
                         violation = np.abs(solution[variable_name])
                         # norm the violation
@@ -445,6 +474,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             violation = solution[variable_name]
                             # positive slacks = violation -> identify it
                             if violation > 0:
+                                # sum up the pressure violations
+                                pressure_violation += violation
                                 # norm the violation
                                 violation /= ub_exit_violation
                                 # weigh the violation
@@ -460,6 +491,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             if self._episode_ended:
                 break
 
+        if self._print_actions:
+            print(f"This step lead to a reward of {agent_step_reward}")
+            print(f"The accumulated flow violations are at "
+                  f"{agent_step_flow_violation}")
+            print(f"The summed up pressure violations are "
+                  f"{pressure_violation}")
+            print(f"The nominations for the current step were "
+                  f"{self._state[:n_entries_exits]}")
         # extract the nominations for updating the state
         nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
         # nominations_t0 = []
