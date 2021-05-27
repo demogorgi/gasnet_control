@@ -27,12 +27,12 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-in_num_iterations_options = [1000, 5000, 10000, 20000, 30000, 50000]
-in_learning_rates = [1e-3, 1e-4, 1e-5]
-in_end_epsilons = [1e-3, 1e-4, 1e-5]
-in_boltzmann_temperatures = [5.0, 2.0, 1.0, 0.5, 0.1]
-in_target_update_steps_options = [1, 10, 50, 200, 500, 1000, 2000]
-in_gradient_clippings = [None, 10.0, 5.0, 1.0, 0.5]
+in_num_iterations_options = [30000]#[5000, 20000, 50000]
+in_learning_rates = [1e-5]
+in_end_epsilons = []
+in_boltzmann_temperatures = [0.1]
+in_target_update_steps_options = [700] #100, 250, 400, 550, 700, 850, 1000
+in_gradient_clippings = [1.0] #dont forget None value
 
 def dqn_agent_training(
         in_num_iterations=20000,
@@ -266,7 +266,13 @@ def dqn_agent_training(
     losses = []
 
     # initialize the necessary variables for saving the policy for later use
-    policy_dir = os.path.join(temp_dir, 'policy')
+    policy_name = f"policy_iters{int(num_iterations/1000)}_" +\
+                  f"rate{str(learning_rate).replace('0', '')}_" +\
+                  f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +\
+                f"update{target_update_steps}_" +\
+                f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +\
+                f"{end_epsilon if use_epsilon else boltzmann_temperatur}"
+    policy_dir = os.path.join(temp_dir, policy_name)
     tf_policy_saver = policy_saver.PolicySaver(agent.policy)
     start_time = time.time()
 
@@ -352,41 +358,30 @@ def dqn_agent_training(
           f"or {procedure_time/3600} hours for {num_iterations} iterations")
 
 
-# for iterations in in_num_iterations_options:
-#     for rate in in_learning_rates:
-#         for target_update in in_target_update_steps_options:
-#             for gradient in in_gradient_clippings:
-#                 # first perform epsilon decay
-#                 for eps in in_end_epsilons:
-#                     dqn_agent_training(
-#                         in_num_iterations=iterations,
-#                         in_learning_rate=rate,
-#                         in_end_epsilon=eps,
-#                         in_use_epsilon=True,
-#                         in_boltzmann_temperatur=0.0,
-#                         in_target_update_steps=target_update,
-#                         in_gradient_clipping=gradient,
-#                         in_show_plot=False
-#                     )
-#                 for temp in in_boltzmann_temperatures:
-#                     dqn_agent_training(
-#                         iterations,
-#                         rate,
-#                         1e-3,
-#                         False,
-#                         temp,
-#                         target_update,
-#                         gradient,
-#                         False
-#                     )
-
-dqn_agent_training(
-    in_num_iterations=5000,
-    in_learning_rate=1e-5,
-    in_end_epsilon=0.001,
-    in_use_epsilon=False,
-    in_boltzmann_temperatur=0.5,
-    in_target_update_steps=200,
-    in_gradient_clipping=1.0,
-    in_show_plot=True
-)
+for iterations in in_num_iterations_options:
+    for rate in in_learning_rates:
+        for target_update in in_target_update_steps_options:
+            for gradient in in_gradient_clippings:
+                # first perform epsilon decay
+                for eps in in_end_epsilons:
+                    dqn_agent_training(
+                        in_num_iterations=iterations,
+                        in_learning_rate=rate,
+                        in_end_epsilon=eps,
+                        in_use_epsilon=True,
+                        in_boltzmann_temperatur=0.0,
+                        in_target_update_steps=target_update,
+                        in_gradient_clipping=gradient,
+                        in_show_plot=False
+                    )
+                for temp in in_boltzmann_temperatures:
+                    dqn_agent_training(
+                        iterations,
+                        rate,
+                        1e-3,
+                        False,
+                        temp,
+                        target_update,
+                        gradient,
+                        False
+                    )

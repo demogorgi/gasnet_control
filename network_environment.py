@@ -33,13 +33,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
-                 random_nominations=True):
+                 random_nominations=True, print_actions=False):
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
         self._max_agent_steps = max_agent_steps
         self._random_nominations = random_nominations
         self._entry_offset = self._steps_per_agent_steps * (-2)
+        self._print_actions = print_actions
 
         # analyse initial decisions to extract values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
@@ -388,6 +389,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         efficiency = 0.0
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
                     agent_decisions["gas"]["CS"][compressor][step] = activation
+
+            # print the action dictionary once for each agent step if desired
+            if self._print_actions:
+                if step % self._steps_per_agent_steps == 0:
+                    print(agent_decisions)
 
             solution = simulator_step(agent_decisions, step, "sim")
 
