@@ -365,7 +365,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         agent_step_reward = 0
 
         step = 0
-        agent_step_flow_violation = 0
+        agent_step_flow_violation = {}
         pressure_violation = 0
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
@@ -417,7 +417,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                 activation = 0
                                 efficiency = 0.0
                             print(f"compressor {compressor} is "
-                                  f"{'' if activation == 1 else 'not'}"
+                                  f"{'' if activation == 1 else 'not '}"
                                   f"activated"
                                   f"{'' if activation == 0 else ' with efficiency ' + str(efficiency)}")
 
@@ -458,13 +458,15 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     if variable_name.startswith("nom_entry_slack_DA"):
                         # sum up all pressure violations (may cancel out in
                         # one agent step. Intended!)
-                        agent_step_flow_violation += solution[variable_name]
+                        if variable_name not in agent_step_flow_violation:
+                            agent_step_flow_violation[variable_name] = 0
+                        agent_step_flow_violation[variable_name] += solution[variable_name]
                         # define the violation
                         violation = np.abs(solution[variable_name])
                         # norm the violation
                         violation /= ub_entry_violation
                         # weigh the violation
-                        violation *= entry_multiplier
+                        violation *= entry_multiplier*2
                         # subtract it from the initial reward
                         step_reward -= violation
                     # deviations from exit pressures/nomin. to be penalized
@@ -479,7 +481,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                 # norm the violation
                                 violation /= ub_exit_violation
                                 # weigh the violation
-                                violation *= exit_multiplier
+                                violation *= exit_multiplier*2
                                 # subtract it from the initial reward
                                 step_reward -= violation
 
