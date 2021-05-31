@@ -9,9 +9,9 @@ write_lp: False
 # write solution files in the sol-format?
 write_sol: True
 # write irreducible infeasibility set if problem is infeasible?
-write_ilp: True
+write_ilp: False
 # write wheel maps with gnuplot?
-gnuplot: True
+gnuplot: False
 # console output?
 urmel_console_output: False
 # gurobi logfile
