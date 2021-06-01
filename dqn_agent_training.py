@@ -27,11 +27,11 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-in_num_iterations_options = [30000]#[5000, 20000, 50000]
+in_num_iterations_options = [5000]#[5000, 20000, 50000]
 in_learning_rates = [1e-5]
-in_end_epsilons = []
-in_boltzmann_temperatures = [0.1]
-in_target_update_steps_options = [700] #100, 250, 400, 550, 700, 850, 1000
+in_end_epsilons = [1e-3]
+in_boltzmann_temperatures = []
+in_target_update_steps_options = [200] #100, 250, 400, 550, 700, 850, 1000
 in_gradient_clippings = [1.0] #dont forget None value
 
 def dqn_agent_training(
@@ -55,11 +55,11 @@ def dqn_agent_training(
     log_interval = 200  # @param {type:"integer"}
 
     num_eval_episodes = 10  # @param {type:"integer"}
-    eval_interval = 100#0  # @param {type:"integer"}
+    eval_interval = 1000  # @param {type:"integer"}
 
     # define a decaying epsilon over time, a boltzmann and which to use
     global_step = tf.compat.v1.train.get_or_create_global_step()
-    start_epsilon = 0.1
+    start_epsilon = 1.0
     end_epsilon = in_end_epsilon
     epsilon = tf.compat.v1.train.polynomial_decay(
         start_epsilon,
@@ -135,10 +135,9 @@ def dqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
-    fc_layer_param = (100, 50)
+    fc_layer_param = (200, 360)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
     num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
-
 
     # helper function for creation of dense layers
     def dense_layer(num_units):
@@ -149,7 +148,6 @@ def dqn_agent_training(
                 scale=2.0, mode='fan_in', distribution='truncated_normal'
             )
         )
-
 
     # define q network with its layers
     dense_layers = [dense_layer(num_units) for num_units in fc_layer_param]
@@ -294,7 +292,7 @@ def dqn_agent_training(
 
         if step % eval_interval == 0:
             avg_return = compute_avg_return(eval_env, agent.policy,
-                                            1)#num_eval_episodes)
+                                            num_eval_episodes)
             print('step = {0}: Average Return = {1}'.format(step, avg_return))
             returns.append(avg_return)
 
@@ -310,7 +308,7 @@ def dqn_agent_training(
     plt.xlabel('Iterations')
     plt.ylabel('Average Return')
     plt.savefig(f"/home/adi/Uni/SoSe21/Masterarbeit/" +
-                f"weight10_agent10_simulation8_discret10_systematic/" +
+                f"reward_exppress_contflow/" +
                 f"reward_iters{int(num_iterations/1000)}_" +
                 f"rate{str(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
@@ -326,7 +324,7 @@ def dqn_agent_training(
     plt.xlabel('Iterations')
     plt.ylabel('Loss')
     plt.savefig(f"/home/adi/Uni/SoSe21/Masterarbeit/" +
-                f"weight10_agent10_simulation8_discret10_systematic/" +
+                f"reward_exppress_contflow/" +
                 f"loss_iters{int(num_iterations/1000)}_" +
                 f"rate{str(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +

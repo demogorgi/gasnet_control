@@ -22,7 +22,8 @@ from tf_agents.trajectories import time_step as ts
 #tf.compat.v1.enable_v2_behavior()
 
 # own inputs
-import gasnet_control.instances.da2.connections
+#import gasnet_control.instances.da2.connections
+import instances.da2.connections
 from urmel import *
 from model import *
 import functions as funcs
@@ -366,7 +367,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         step = 0
         agent_step_flow_violation = {}
-        pressure_violation = 0
+        pressure_violations = set()
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
             # apply the actions; first valves, then resistors, then compressors
@@ -452,47 +453,54 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 exit_multiplier = 1 / (n_entries / exit_entry_impact_ratio +
                                        n_exits)
 
-                # iterate through variables to identify relevant ones
+                # iterate through variables to identify entries and exits
                 for variable_name in solution.keys():
-                    # deviations from entry flows have to be penalized
+                    # deviations from entry flows have to be summed up for each
                     if variable_name.startswith("nom_entry_slack_DA"):
-                        # sum up all pressure violations (may cancel out in
-                        # one agent step. Intended!)
+                        # sum up pressure violations for each entry over one
+                        # agent  step (may cancel out and is intended)
                         if variable_name not in agent_step_flow_violation:
                             agent_step_flow_violation[variable_name] = 0
-                        agent_step_flow_violation[variable_name] += solution[variable_name]
-                        # define the violation
-                        violation = np.abs(solution[variable_name])
-                        # norm the violation
-                        violation /= ub_entry_violation
-                        # weigh the violation
-                        violation *= entry_multiplier*2
-                        # subtract it from the initial reward
-                        step_reward -= violation
-                    # deviations from exit pressures/nomin. to be penalized
+                        agent_step_flow_violation[variable_name] += \
+                            solution[variable_name]
+
+                    # count deviations from exit pressures to be penalized
                     elif any(map(variable_name.__contains__, no.exits)):
                         if "b_pressure_violation_DA" in variable_name:
                             # define the potential violation
                             violation = solution[variable_name]
                             # positive slacks = violation -> identify it
                             if violation > 0:
-                                # sum up the pressure violations
-                                pressure_violation += violation
-                                # norm the violation
-                                violation /= ub_exit_violation
-                                # weigh the violation
-                                violation *= exit_multiplier*2
-                                # subtract it from the initial reward
-                                step_reward -= violation
+                                # extract exit name
+                                violated_exit = variable_name.split("[")[1]
+                                violated_exit = violated_exit.split("]")[0]
+                                # mark violations via appendix to set
+                                pressure_violations.add(violated_exit)
 
-                # divide the step reward by the amount of simulation steps
-                step_reward /= self._steps_per_agent_steps
-
-            # with the upper procedure agent_step_reward is in [0, 1]
-            agent_step_reward += step_reward
             if self._episode_ended:
                 break
 
+        # reward calculation between [-1, 1]
+        # each flow violation has an impact of max 1/n_entries and is dependent
+        # on the accumulated flow violation
+        flow_violation = 0
+        for violation in agent_step_flow_violation.values():
+            flow_violation += min(
+                np.abs(violation/(
+                        self._steps_per_agent_steps *
+                        ub_entry_violation
+                        )),
+                1.0
+                )/n_entries
+
+        # a pressure violation is rated is critical -> if n = amount exits
+        # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
+        n_press_viol = len(pressure_violations)
+        pressure_violation = np.sum([2**(n_press_viol - i - 1) /
+                                     (2**n_press_viol - 1)
+                                     for i in range(n_press_viol)])
+        if not self._episode_ended:
+            agent_step_reward = 1.0 - (pressure_violation + flow_violation)
         if self._print_actions:
             print(f"This step lead to a reward of {agent_step_reward}")
             print(f"The accumulated flow violations are at "
@@ -503,25 +511,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                   f"{self._state[:n_entries_exits]}")
         # extract the nominations for updating the state
         nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
-        # nominations_t0 = []
-        # for count, node in enumerate(no.exits + co.special):
-        #     try:
-        #         # nodes are represented as strings
-        #         if type(node) == str:
-        #             nomination = agent_decisions["exit_nom"]["X"][node][
-        #                 step + 1]
-        #         # pipes and non pipes are represented as tuples of strings
-        #         else:
-        #             key = joiner(node)
-        #             nomination = agent_decisions["entry_nom"]["S"][key][
-        #                 step + 1]
-        #     except KeyError:
-        #         if type(node) == str:
-        #             nomination = agent_decisions["exit_nom"]["X"][node][0]
-        #         else:
-        #             key = joiner(node)
-        #             nomination = agent_decisions["entry_nom"]["S"][key][0]
-        #     nominations_t0 += [nomination]
 
         nominations_t1 = []
         if self._random_nominations:
