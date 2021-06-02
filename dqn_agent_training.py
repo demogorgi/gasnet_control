@@ -27,16 +27,18 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-in_num_iterations_options = [5000]#[5000, 20000, 50000]
+in_num_iterations_options = [20000]#[5000, 20000, 50000]
 in_learning_rates = [1e-5]
+in_start_epsilon = 0.1
 in_end_epsilons = [1e-3]
 in_boltzmann_temperatures = []
-in_target_update_steps_options = [200] #100, 250, 400, 550, 700, 850, 1000
+in_target_update_steps_options = [2000] #100, 250, 400, 550, 700, 850, 1000
 in_gradient_clippings = [1.0] #dont forget None value
 
 def dqn_agent_training(
         in_num_iterations=20000,
         in_learning_rate=1e-5,
+        in_start_epsilon=0.1,
         in_end_epsilon=1e-4,
         in_use_epsilon=False,
         in_boltzmann_temperatur=1.0,
@@ -59,7 +61,7 @@ def dqn_agent_training(
 
     # define a decaying epsilon over time, a boltzmann and which to use
     global_step = tf.compat.v1.train.get_or_create_global_step()
-    start_epsilon = 1.0
+    start_epsilon = in_start_epsilon
     end_epsilon = in_end_epsilon
     epsilon = tf.compat.v1.train.polynomial_decay(
         start_epsilon,
@@ -269,7 +271,8 @@ def dqn_agent_training(
                   f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +\
                 f"update{target_update_steps}_" +\
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +\
-                f"{end_epsilon if use_epsilon else boltzmann_temperatur}"
+                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +\
+                f"{boltzmann_temperatur if not use_epsilon else ''}.png"
     policy_dir = os.path.join(temp_dir, policy_name)
     tf_policy_saver = policy_saver.PolicySaver(agent.policy)
     start_time = time.time()
@@ -314,7 +317,8 @@ def dqn_agent_training(
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
-                f"{end_epsilon if use_epsilon else boltzmann_temperatur}.png")
+                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
+                f"{boltzmann_temperatur if not use_epsilon else ''}.png")
     if show_plot:
         plt.show()
 
@@ -330,7 +334,8 @@ def dqn_agent_training(
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
-                f"{end_epsilon if use_epsilon else boltzmann_temperatur}.png")
+                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
+                f"{boltzmann_temperatur if not use_epsilon else ''}.png")
     if show_plot:
         plt.show()
 
@@ -365,6 +370,7 @@ for iterations in in_num_iterations_options:
                     dqn_agent_training(
                         in_num_iterations=iterations,
                         in_learning_rate=rate,
+                        in_start_epsilon=in_start_epsilon,
                         in_end_epsilon=eps,
                         in_use_epsilon=True,
                         in_boltzmann_temperatur=0.0,
@@ -376,6 +382,7 @@ for iterations in in_num_iterations_options:
                     dqn_agent_training(
                         iterations,
                         rate,
+                        in_start_epsilon,
                         1e-3,
                         False,
                         temp,

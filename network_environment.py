@@ -391,7 +391,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         activation = 0
                         efficiency = 0.0
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
-                    agent_decisions["gas"]["CS"][compressor][step] = activation
+                    agent_decisions["compressor"]["CS"][compressor][step] = \
+                        activation
 
             # print the actions once for each agent step if desired
             if self._print_actions:
