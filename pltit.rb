@@ -25,6 +25,6 @@ end
 hash2csv(data, 'pltit.csv')
 
 plt = "set key autotitle columnhead noenhanced\nset datafile separator ';'\n"
-plt += "plot for [i=1:10] 'pltit.csv' u i w l"
+plt += "plot for [i=1:10] 'pltit.csv' u i w steps"
 File.write('pltit.plt', plt)
 system('gnuplot -p pltit.plt')
