@@ -10,7 +10,9 @@ def hash2csv(h,file)
 end
 
 data = {}
-Dir.glob('instances/' + ARGV[0] + '/output/*.sol') do |sol_filename|
+Dir.glob('instances/' + ARGV[0] + '/output/*.sol').sort.each do |sol_filename|
+#Dir.glob('instances/' + ARGV[0] + '/output/*.sol') do |sol_filename|
+  pp sol_filename
   File.open(sol_filename).each do |line|
     x = ARGV[1..-1].map{ |a| line.match(a + '.*') }.compact
     if x[0] != nil
