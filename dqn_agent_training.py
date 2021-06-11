@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import base64
 import os
+import sys
 
 import numpy as np
 import matplotlib
@@ -17,6 +18,7 @@ from tf_agents.environments import tf_py_environment
 from tf_agents.eval import metric_utils
 from tf_agents.metrics import tf_metrics
 from tf_agents.networks import sequential
+from tf_agents.networks import q_network
 from tf_agents.policies import random_tf_policy
 from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
@@ -27,12 +29,20 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-in_num_iterations_options = [20000]#[5000, 20000, 50000]
-in_learning_rates = [1e-5]
-in_start_epsilon = 0.1
-in_end_epsilons = [1e-3]
+on_cluster = True
+
+if len(sys.argv) > 4:
+    in_target_update_steps_options = [int(steps) for steps in
+                                      sys.argv[4].split("-")]
+else:
+    in_target_update_steps_options = [5000]  # 100, 250, 400, 550, 700, 850,
+
+in_num_iterations_options = [10000]#[5000, 20000, 50000]
+in_learning_rates = [1e-4]
+in_start_epsilon = 1.0
+in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
-in_target_update_steps_options = [2000] #100, 250, 400, 550, 700, 850, 1000
+#in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 in_gradient_clippings = [1.0] #dont forget None value
 
 def dqn_agent_training(
@@ -46,6 +56,7 @@ def dqn_agent_training(
         in_gradient_clipping=1.0,
         in_show_plot=True
 ):
+    print("Getting into dqn agent training")
     num_iterations = in_num_iterations    # @param {type:"integer"}
 
     initial_collect_steps = 100  # @param {type:"integer"}
@@ -79,7 +90,8 @@ def dqn_agent_training(
 
     #tf.compat.v1.enable_v2_behavior()
 
-    temp_dir = os.getcwd() + '/instances'
+    if not on_cluster:
+        temp_dir = os.getcwd() + '/instances'
 
     # custom hyperoarameters
 
@@ -92,6 +104,7 @@ def dqn_agent_training(
 
     show_plot = in_show_plot
 
+    print("parameter init worked")
     ###### TESTING FUNCTIONALITY ############
     env = network_environment.\
         GasNetworkEnv(discretization_steps=discretization,
@@ -100,25 +113,34 @@ def dqn_agent_training(
                       max_agent_steps=max_agent_steps,
                       random_nominations=random_entry_nominations)
     env.reset()
+    if not on_cluster:
+        print('Observation Spec:')
+        print(env.time_step_spec().observation)
 
-    print('Observation Spec:')
-    print(env.time_step_spec().observation)
+        print('Reward Spec:')
+        print(env.time_step_spec().reward)
 
-    print('Reward Spec:')
-    print(env.time_step_spec().reward)
-
-    print('Action Spec:')
-    print(env.action_spec())
+        print('Action Spec:')
+        print(env.action_spec())
 
     time_step0 = env.reset()
-    print('Time step:')
-    print(time_step0)
+
+    if not on_cluster:
+        print('Time step:')
+        print(time_step0)
 
     action = np.array(35, dtype=np.int32)
 
-    next_time_step0 = env.step(action)
-    print('Next time step:')
-    print(next_time_step0)
+    print("reset of environment worked")
+
+    if on_cluster:
+        next_time_step0 = env.step(action)
+
+    #print("first environment creation worked")
+
+    if on_cluster:
+        print('Next time step:')
+        print(next_time_step0)
 
     ########## TRAINING SECTION ##########
     train_py_env = network_environment. \
@@ -137,7 +159,9 @@ def dqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
-    fc_layer_param = (200, 360)
+    print("training/eval env init worked")
+
+    fc_layer_param = (250,)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
     num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
@@ -152,18 +176,25 @@ def dqn_agent_training(
         )
 
     # define q network with its layers
-    dense_layers = [dense_layer(num_units) for num_units in fc_layer_param]
-    q_values_layer = tf.keras.layers.Dense(
-        num_actions,
-        activation=None,
-        kernel_initializer=tf.keras.initializers.RandomUniform(
-            minval=-0.03, maxval=0.03
-        ),
-        bias_initializer=tf.keras.initializers.Constant(-0.2)
+    # dense_layers = [dense_layer(num_units) for num_units in fc_layer_param]
+    # q_values_layer = tf.keras.layers.Dense(
+    #     num_actions,
+    #     activation=None,
+    #     kernel_initializer=tf.keras.initializers.RandomUniform(
+    #         minval=-0.03, maxval=0.03
+    #     ),
+    #     bias_initializer=tf.keras.initializers.Constant(-0.2)
+    # )
+    # q_net = sequential.Sequential(dense_layers + [q_values_layer])
+    q_net = q_network.QNetwork(
+        input_tensor_spec=train_env.time_step_spec().observation,
+        action_spec=train_env.action_spec(),
+        fc_layer_params=fc_layer_param
     )
-    q_net = sequential.Sequential(dense_layers + [q_values_layer])
 
     # instantiate dqn agent
+    #optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate,
+    #                                    momentum=1.0)
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
     train_step_counter = tf.Variable(0)
@@ -184,6 +215,8 @@ def dqn_agent_training(
 
     agent.initialize()
 
+    print("agent init worked")
+
     # define policies
     eval_policy = agent.policy
     collect_policy = agent.collect_policy
@@ -197,7 +230,6 @@ def dqn_agent_training(
     # )
     # time_step1 = example_env.reset()
     # random_policy.action(time_step1)
-
 
     def compute_avg_return(environment, policy, num_episodes=10):
 
@@ -254,6 +286,7 @@ def dqn_agent_training(
 
     iterator = iter(dataset)
 
+    print("init replay buffer worked")
     ##### actual training procedure
     agent.train = common.function(agent.train)
 
@@ -266,16 +299,23 @@ def dqn_agent_training(
     losses = []
 
     # initialize the necessary variables for saving the policy for later use
-    policy_name = f"policy_iters{int(num_iterations/1000)}_" +\
+    policy_name = f"policy_{fc_layer_param}realQ_" +\
+                  f"iters{int(num_iterations/1000)}_" +\
                   f"rate{str(learning_rate).replace('0', '')}_" +\
                   f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +\
                 f"update{target_update_steps}_" +\
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +\
                 f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +\
-                f"{boltzmann_temperatur if not use_epsilon else ''}.png"
-    policy_dir = os.path.join(temp_dir, policy_name)
+                f"{boltzmann_temperatur if not use_epsilon else ''}"
+    if on_cluster:
+        policy_dir = f"/home/hpc/mpwm/mpwm023h/masterthesis/policies/" \
+                     + policy_name
+    else:
+        policy_dir = os.path.join(temp_dir, policy_name)
     tf_policy_saver = policy_saver.PolicySaver(agent.policy)
     start_time = time.time()
+
+    print("init policy worked. Starting training")
 
     # train
     for _ in range(num_iterations):
@@ -290,16 +330,20 @@ def dqn_agent_training(
         step = agent.train_step_counter.numpy()
 
         if step % log_interval == 0:
-            print('step = {0}: loss = {1}'.format(step, train_loss))
+            if on_cluster:
+                print('step = {0}: loss = {1}'.format(step, train_loss))
             losses += [train_loss]
 
         if step % eval_interval == 0:
             avg_return = compute_avg_return(eval_env, agent.policy,
                                             num_eval_episodes)
-            print('step = {0}: Average Return = {1}'.format(step, avg_return))
+            if not on_cluster:
+                print('step = {0}: Average Return = {1}'.format(step,
+                                                                avg_return))
             returns.append(avg_return)
 
-    print(returns)
+    print("returns: ", returns)
+    print("losses: ", losses)
 
     # save the policy
     tf_policy_saver.save(policy_dir)
@@ -310,15 +354,20 @@ def dqn_agent_training(
     plt.plot(iterations, returns)
     plt.xlabel('Iterations')
     plt.ylabel('Average Return')
-    plt.savefig(f"/home/adi/Uni/SoSe21/Masterarbeit/" +
-                f"reward_exppress_contflow/" +
-                f"reward_iters{int(num_iterations/1000)}_" +
+    if on_cluster:
+        fig_path = f"/home/hpc/mpwm/mpwm023h/masterthesis/plots/"
+    else:
+        fig_path = f"/home/adi/Uni/SoSe21/Masterarbeit/" +\
+                          f"reward_exppress_contflow/"
+    plt.savefig(fig_path +
+                f"reward_{fc_layer_param}realQ_" +
+                f"iters{int(num_iterations/1000)}_" +
                 f"rate{str(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
                 f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
-                f"{boltzmann_temperatur if not use_epsilon else ''}.png")
+                f"{boltzmann_temperatur if not use_epsilon else ''}.pdf")
     if show_plot:
         plt.show()
 
@@ -327,15 +376,15 @@ def dqn_agent_training(
     plt.plot(iterations, losses)
     plt.xlabel('Iterations')
     plt.ylabel('Loss')
-    plt.savefig(f"/home/adi/Uni/SoSe21/Masterarbeit/" +
-                f"reward_exppress_contflow/" +
-                f"loss_iters{int(num_iterations/1000)}_" +
+    plt.savefig(fig_path +
+                f"loss_{fc_layer_param}realQ_" +
+                f"iters{int(num_iterations/1000)}_" +
                 f"rate{str(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
                 f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
-                f"{boltzmann_temperatur if not use_epsilon else ''}.png")
+                f"{boltzmann_temperatur if not use_epsilon else ''}.pdf")
     if show_plot:
         plt.show()
 
