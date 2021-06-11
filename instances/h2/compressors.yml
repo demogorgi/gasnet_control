@@ -6,7 +6,7 @@
    # value of L_MIN at 0
    pi_MIN: 2.5
    # argument phi with L_MIN(phi) = 0
-   phi_MIN: 32.5
+   phi_MIN: 2.5
    # p_in_min in bar
    p_in_min: 30
    # p_in_max in bar
@@ -30,7 +30,7 @@
    # value of L_MIN at 0
    pi_MIN: 2.5
    # argument phi with L_MIN(phi) = 0
-   phi_MIN: 32.5
+   phi_MIN: 2.5
    # p_in_min in bar
    p_in_min: 30
    # p_in_max in bar

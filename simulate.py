@@ -3,7 +3,7 @@
 
 # this file manages the iterative process
 # it works for example with python3, gurobi 8.0.1, yaml 5.3
-# >python3 main.py path numIterations lengthTimestep
+# >python3 simulate.py path numIterations lengthTimestep
 
 from urmel import *
 import pprint
