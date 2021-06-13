@@ -37,9 +37,13 @@ if len(sys.argv) > 4:
 else:
     in_target_update_steps_options = [5000]  # 100, 250, 400, 550, 700, 850,
 
-in_num_iterations_options = [10000]#[5000, 20000, 50000]
+if len(sys.argv) > 5:
+    in_start_epsilon = float(sys.argv[5])
+else:
+    in_start_epsilon = 1.0
+
+in_num_iterations_options = [100000]#[5000, 20000, 50000]
 in_learning_rates = [1e-4]
-in_start_epsilon = 1.0
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
 #in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
@@ -330,7 +334,7 @@ def dqn_agent_training(
         step = agent.train_step_counter.numpy()
 
         if step % log_interval == 0:
-            if on_cluster:
+            if not on_cluster:
                 print('step = {0}: loss = {1}'.format(step, train_loss))
             losses += [train_loss]
 
@@ -342,8 +346,26 @@ def dqn_agent_training(
                                                                 avg_return))
             returns.append(avg_return)
 
-    print("returns: ", returns)
-    print("losses: ", losses)
+    if on_cluster:
+        try:
+            out_path = f'/home/hpc/mpwm/mpwm023h/masterthesis/outfiles/'
+            out_file_name = f"loss_{fc_layer_param}realQ_" + \
+                        f"iters{int(num_iterations/1000)}_" + \
+                    f"rate{str(learning_rate).replace('0', '')}_" + \
+                    f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" + \
+                    f"update{target_update_steps}_" + \
+                    f"{'epsilondecay' if use_epsilon else 'boltzmann'}" + \
+                    f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" + \
+                    f"{boltzmann_temperatur if not use_epsilon else ''}.out"
+            with open(out_path + out_file_name, 'a+') as out_file:
+                out_file.write("returns:\n")
+                for ret in returns:
+                    out_file.write(str(ret) + ",")
+                out_file.write("\nlosses:\n")
+                for loss in losses:
+                    out_file.write(str(loss) + ",")
+        except:
+            print("outfile didn't work")
 
     # save the policy
     tf_policy_saver.save(policy_dir)

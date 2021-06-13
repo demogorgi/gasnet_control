@@ -2,3 +2,5 @@ instances/*/output
 instances/*/__pycache__
 *~
 *.swp
+instances/policy*
+instances/timestep8s/
