@@ -1,0 +1,302 @@
+<?xml version="1.0"?>
+<network interfaceVersion="2.0.1">
+	<information>
+		<title>
+			create_netstate_Eingabedatei
+		</title>
+		<documentation>
+			automatically generated network file from G:\TEAM\Netzplanung\N5003\Navi\Simonenetze\6.3\HYDROGEN360\create_netstate_zeug - Kopie\create_netstate_Eingabedatei.txt
+		</documentation>
+	</information>
+	<units>
+		<net unit="[object Object]"/>
+	</units>
+	<nodes>
+		<innode id="M2177078016" alias="A9" x="6.790" y="-50.7" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M359172501" alias="A14" x="6.960" y="-51.02" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1127362067" alias="A12" x="6.960" y="-50.95" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1978208570" alias="S1I" x="6.550" y="-50.8" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M524336782" alias="A7" x="6.550" y="-50.7" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2564334145" alias="A8" x="6.690" y="-50.7" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1908462132" alias="X2" x="6.690" y="-50.65" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M106663887" alias="A6" x="6.460" y="-50.73" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M879619405" alias="A4" x="6.430" y="-50.81" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2008002403" alias="S2I" x="6.830" y="-50.93" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M762764300" alias="A5" x="6.530" y="-50.81" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1512644434" alias="A13" x="6.860" y="-50.95" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1647790795" alias="A2" x="6.390" y="-51.03" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1746894288" alias="A11" x="6.960" y="-50.85" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1226447112" alias="A1" x="6.600" y="-51.1" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2066512778" alias="A3" x="6.390" y="-50.94" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1896107153" alias="A10" x="6.890" y="-50.78" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M208910548" alias="A15" x="6.870" y="-51.1" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2081891143" alias="A7_aux" x="6.505" y="-50.715" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M4231136622" alias="A10_aux" x="6.925" y="-50.815" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M2902430941" alias="A15_aux" x="6.909999999999999" y="-51.145" geoWGS84Lat="51.4685" geoWGS84Long="7.0055">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M1738753912" alias="A14_aux" x="6.999999999999999" y="-51.065000000000005" geoWGS84Lat="51.4685" geoWGS84Long="7.0055">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M752530164" alias="A2_aux" x="6.435000000000001" y="-51.03" geoWGS84Lat="51.4685" geoWGS84Long="7.0055">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<innode id="M3884343633" alias="A3_aux" x="6.435000000000001" y="-50.94" geoWGS84Lat="51.4685" geoWGS84Long="7.0055">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+		</innode>
+		<boundaryNode behaviour="exit" id="M1525514743" alias="X1" x="6.830" y="-50.65" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M3970893435" alias="S2P" x="6.830" y="-50.97" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M4008294434" alias="S1P" x="6.550" y="-50.83" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M1309913556" alias="E1" x="6.600" y="-51.19" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+		<boundaryNode behaviour="entry" id="M1698619927" alias="E2" x="7.100" y="-50.85" geoWGS84Long="7.0055" geoWGS84Lat="51.4685">
+			<height value="0.0"/>
+			<pressureLimits lower="0" upper="104"/>
+			<inflowLimits lower="0" upper="10000"/>
+		</boundaryNode>
+	</nodes>
+	<connections>
+		<pipe id="M292916861" alias="A8^A9" from="M2564334145" to="M2177078016">
+			<length value="20.000"/>
+			<diameter value="350.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M4147885370" alias="A9^X1" from="M2177078016" to="M1525514743">
+			<length value="10.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.010"/>
+		</pipe>
+		<pipe id="M2280932197" alias="A14^A12" from="M359172501" to="M1127362067">
+			<length value="30.000"/>
+			<diameter value="600.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M3881023864" alias="A5^S1I" from="M762764300" to="M1978208570">
+			<length value="1.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M2319329517" alias="A7^A8" from="M524336782" to="M2564334145">
+			<length value="25.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M3782659913" alias="A8^X2" from="M2564334145" to="M1908462132">
+			<length value="5.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M3546610489" alias="A10^A9" from="M1896107153" to="M2177078016">
+			<length value="35.000"/>
+			<diameter value="350.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M1394442163" alias="A4^A6" from="M879619405" to="M106663887">
+			<length value="15.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M896293813" alias="A13^S2P" from="M1512644434" to="M3970893435">
+			<length value="30.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M3540762913" alias="A3^A4" from="M2066512778" to="M879619405">
+			<length value="30.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M2926375597" alias="A13^S2I" from="M1512644434" to="M2008002403">
+			<length value="30.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M2085818464" alias="A5^S1P" from="M762764300" to="M4008294434">
+			<length value="1.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M1328358418" alias="E1^A1" from="M1309913556" to="M1226447112">
+			<length value="5.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M2016423024" alias="A4^A5" from="M879619405" to="M762764300">
+			<length value="15.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M1219924281" alias="A12^A13" from="M1127362067" to="M1512644434">
+			<length value="8.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M4287706567" alias="A1^A2" from="M1226447112" to="M1647790795">
+			<length value="30.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M2055271355" alias="A12^A11" from="M1127362067" to="M1746894288">
+			<length value="30.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M184132510" alias="A11^E2" from="M1746894288" to="M1698619927">
+			<length value="30.000"/>
+			<diameter value="400.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M89674368" alias="A1^A15" from="M1226447112" to="M208910548">
+			<length value="30.000"/>
+			<diameter value="900.000"/>
+			<roughness value="0.006"/>
+		</pipe>
+		<pipe id="M1288646321" alias="A15^A15_aux" from="M208910548" to="M2902430941">
+			<length value="0.001"/>
+			<diameter value="1000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M4170176729" alias="A14_aux^A14" from="M1738753912" to="M359172501">
+			<length value="0.001"/>
+			<diameter value="1000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M1993337458" alias="A2^A2_aux" from="M1647790795" to="M752530164">
+			<length value="0.001"/>
+			<diameter value="1000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<pipe id="M2612542854" alias="A3_aux^A3" from="M3884343633" to="M2066512778">
+			<length value="0.001"/>
+			<diameter value="1000"/>
+			<roughness value="0.012"/>
+		</pipe>
+		<compressorStation id="M2069823294" alias="A15^A14" from="M208910548" to="M359172501">
+			<targetFlowLimits lower="0.000" upper="6000.000"/>
+			<targetMinPressureInLimits lower="0.000" upper="104.000"/>
+			<targetMaxPressureOutLimits lower="0.000" upper="104.000"/>
+			<diameter value="900.000"/>
+			<dragFactorIn value="0.000"/>
+			<dragFactorOut value="0.000"/>
+			<compressorUnitsList>
+				<none/>
+			</compressorUnitsList>
+		</compressorStation>
+		<compressorStation id="M1349758205" alias="A2^A3" from="M1647790795" to="M2066512778">
+			<targetFlowLimits lower="0.000" upper="6000.000"/>
+			<targetMinPressureInLimits lower="0.000" upper="104.000"/>
+			<targetMaxPressureOutLimits lower="0.000" upper="104.000"/>
+			<diameter value="900.000"/>
+			<dragFactorIn value="0.000"/>
+			<dragFactorOut value="0.000"/>
+			<compressorUnitsList>
+				<none/>
+			</compressorUnitsList>
+		</compressorStation>
+		<checkValve id="M2010794837" alias="A7_aux^A7" from="M2081891143" to="M524336782">
+			<dragFactorIn value="0"/>
+			<dragFactorOut value="0"/>
+		</checkValve>
+		<checkValve id="M4495781" alias="A10_aux^A10" from="M4231136622" to="M1896107153">
+			<dragFactorIn value="0"/>
+			<dragFactorOut value="0"/>
+		</checkValve>
+		<checkValve id="M3229536103" alias="A15_aux^A14_aux" from="M2902430941" to="M1738753912">
+			<dragFactorIn value="0"/>
+			<dragFactorOut value="0"/>
+		</checkValve>
+		<checkValve id="M343577131" alias="A2_aux^A3_aux" from="M752530164" to="M3884343633">
+			<dragFactorIn value="0"/>
+			<dragFactorOut value="0"/>
+		</checkValve>
+		<resistor id="M1467614241" alias="A6^A7_aux" from="M106663887" to="M2081891143">
+			<diameter value="400.000"/>
+		</resistor>
+		<resistor id="M2086098914" alias="A11^A10_aux" from="M1746894288" to="M4231136622">
+			<diameter value="350.000"/>
+		</resistor>
+	</connections>
+	<flowLimits lower="-10000" upper="10000"/>
+	<velicityLimits lower="-100" upper="100"/>
+	
+
+</network>

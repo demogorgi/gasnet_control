@@ -2,11 +2,12 @@
 import tensorflow as tf
 import os
 import network_environment
+import time
 
 from tf_agents.environments import tf_py_environment
 
 # hyperparameters
-num_eval_agent_steps = 6
+num_eval_agent_steps = 10
 
 simulations_per_agent_step = 8
 
@@ -14,11 +15,12 @@ simulations_per_agent_step = 8
 # import the policy accomplished through training
 temp_dir = os.getcwd() + '/instances'
 policy_dir = os.path.join(temp_dir, "policy_" +\
-                          f"iters{30}_" +\
-                          f"rate1e-5_" +\
+                          f"iters{50}_" +\
+                          f"rate1e-6_" +\
                           f"clip{1}_" +\
-                          f"update{250}_" +\
-                          f"boltzmann{0.1}")
+                          f"update{3000}_" +\
+                          f"epsilondecay{0.1}to{0.001}.png")
+                          #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
 # define the environment with nominations from file
@@ -37,6 +39,7 @@ eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 time_step = eval_env.reset()
 step = 0
 for _ in range(num_eval_agent_steps):
+    #time.sleep(5)
     print("#"*15 + f"Evaluation of step {step}" + "#"*15)
     if not time_step.is_last():
         action_step = trained_policy.action(time_step)

@@ -1,0 +1,256 @@
+<?xml version="1.0"?>
+<state interfaceVersion="2.0.1">
+	<timeOfState timestamp="2021-06-11T09:30:00"/>
+	<units>
+		<state unit="[object Object]"/>
+	</units>
+	<globalGasParameters>
+		<dynamicViscosity value="1.1E-5"/>
+		<molarMass value="17.086"/>
+		<pseudocriticalPressure value="46.525"/>
+		<pseudocriticalTemperature value="197.401"/>
+	</globalGasParameters>
+	<nodes>
+		<boundaryNodes>
+			<exit id="M1525514743" alias="X1">
+				<pressure value="36.630"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+				<inflow value="-112.920"/>
+			</exit>
+			<entry id="M3970893435" alias="S2P">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+				<inflow value="0.000"/>
+				<inflowNormDensity value="0.790"/>
+				<inflowCalorificValue value="40.500"/>
+			</entry>
+			<entry id="M4008294434" alias="S1P">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+				<inflow value="0.000"/>
+				<inflowNormDensity value="0.790"/>
+				<inflowCalorificValue value="40.500"/>
+			</entry>
+			<entry id="M1309913556" alias="E1">
+				<pressure value="35.000"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+				<inflow value="0.001"/>
+				<inflowNormDensity value="0.790"/>
+				<inflowCalorificValue value="40.500"/>
+			</entry>
+			<entry id="M1698619927" alias="E2">
+				<pressure value="39.110"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+				<inflow value="112.920"/>
+				<inflowNormDensity value="0.790"/>
+				<inflowCalorificValue value="40.500"/>
+			</entry>
+		</boundaryNodes>
+		<innodes>
+			<innode id="M2177078016" alias="A9">
+				<pressure value="36.880"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M359172501" alias="A14">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="297.500"/>
+			</innode>
+			<innode id="M1127362067" alias="A12">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1978208570" alias="S1I">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M524336782" alias="A7">
+				<pressure value="36.880"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M2564334145" alias="A8">
+				<pressure value="36.880"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1908462132" alias="X2">
+				<pressure value="36.880"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M106663887" alias="A6">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M879619405" alias="A4">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M2008002403" alias="S2I">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M762764300" alias="A5">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1512644434" alias="A13">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1647790795" alias="A2">
+				<pressure value="35.000"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1746894288" alias="A11">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1226447112" alias="A1">
+				<pressure value="35.000"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M2066512778" alias="A3">
+				<pressure value="48.990"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M1896107153" alias="A10">
+				<pressure value="38.430"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+			<innode id="M208910548" alias="A15">
+				<pressure value="35.000"/>
+				<calorificValue value="12.752"/>
+				<normDensity value="0.070"/>
+				<temperature value="283.100"/>
+			</innode>
+		</innodes>
+	</nodes>
+	<connections>
+		<pipe id="M292916861" alias="A8^A9" from="M2564334145" to="M2177078016">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M4147885370" alias="A9^X1" from="M2177078016" to="M1525514743">
+			<flow value="112.920"/>
+		</pipe>
+		<pipe id="M2280932197" alias="A14^A12" from="M359172501" to="M1127362067">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M3881023864" alias="A5^S1I" from="M762764300" to="M1978208570">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M2319329517" alias="A7^A8" from="M524336782" to="M2564334145">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M3782659913" alias="A8^X2" from="M2564334145" to="M1908462132">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M3546610489" alias="A10^A9" from="M1896107153" to="M2177078016">
+			<flow value="112.919"/>
+		</pipe>
+		<pipe id="M1394442163" alias="A4^A6" from="M879619405" to="M106663887">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M896293813" alias="A13^S2P" from="M1512644434" to="M3970893435">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M3540762913" alias="A3^A4" from="M2066512778" to="M879619405">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M2926375597" alias="A13^S2I" from="M1512644434" to="M2008002403">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M2085818464" alias="A5^S1P" from="M762764300" to="M4008294434">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M1328358418" alias="E1^A1" from="M1309913556" to="M1226447112">
+			<flow value="0.001"/>
+		</pipe>
+		<pipe id="M2016423024" alias="A4^A5" from="M879619405" to="M762764300">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M1219924281" alias="A12^A13" from="M1127362067" to="M1512644434">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M4287706567" alias="A1^A2" from="M1226447112" to="M1647790795">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M2055271355" alias="A12^A11" from="M1127362067" to="M1746894288">
+			<flow value="0.000"/>
+		</pipe>
+		<pipe id="M184132510" alias="A11^E2" from="M1746894288" to="M1698619927">
+			<flow value="-112.920"/>
+		</pipe>
+		<pipe id="M89674368" alias="A1^A15" from="M1226447112" to="M208910548">
+			<flow value="0.000"/>
+		</pipe>
+		<controlValve id="M1467614241" alias="R1" from="M106663887" to="M524336782">
+			<flow value="0.000"/>
+			<targetMaxFlow value="10000.000" controllable="true"/>
+			<targetMinPressureIn value="10.000" controllable="true"/>
+			<targetMinPressureOut value="0.000" controllable="true"/>
+			<targetMaxPressureOut value="100.000" controllable="true"/>
+		</controlValve>
+		<controlValve id="M2086098914" alias="R2" from="M1746894288" to="M1896107153">
+			<flow value="112.920"/>
+			<targetMaxFlow value="10000.000" controllable="true"/>
+			<targetMinPressureIn value="20.000" controllable="true"/>
+			<targetMinPressureOut value="0.000" controllable="true"/>
+			<targetMaxPressureOut value="100.000" controllable="true"/>
+		</controlValve>
+		<compressorStation id="M2069823294" alias="V2" from="M208910548" to="M359172501" configuration="closed">
+			<flow value="0.000"/>
+			<targetFlow value="10000.000" controllable="true"/>
+			<targetMinPressureIn value="20.000" controllable="true"/>
+			<targetMaxPressureOut value="80.000" controllable="true"/>
+		</compressorStation>
+		<compressorStation id="M1349758205" alias="V1" from="M1647790795" to="M2066512778" configuration="closed">
+			<flow value="0.000"/>
+			<targetFlow value="10000.000" controllable="true"/>
+			<targetMinPressureIn value="20.000" controllable="true"/>
+			<targetMaxPressureOut value="80.000" controllable="true"/>
+		</compressorStation>
+	</connections>
+	<compressorUnits/>
+</state>

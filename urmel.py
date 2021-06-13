@@ -20,10 +20,11 @@ if os.path.exists(output):
 if not os.path.exists(output):
     os.makedirs(output)
 
+
 def simulator_step(agent_decisions, step, process_type):
 
     simulator_step.counter += 1
-    print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
+    # print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
     # m ist the simulator model with agent decisisons, compressor specs and timestep length incorporated
     m = simulate(agent_decisions, compressors, step, dt)
     # control output
@@ -43,9 +44,9 @@ def simulator_step(agent_decisions, step, process_type):
         print ("model status: ", status)
     if status == GRB.OPTIMAL: # == 2
         # plot data with gnuplot
-        if config['gnuplot'] and ( process_type == "sim" or config["debug"] ):
-            if compressors:
-                os.system(plot(step, _step, agent_decisions, compressors, output))
+        # if config['gnuplot'] and ( process_type == "sim" or config["debug"] ):
+        #     if compressors:
+        #         os.system(plot(step, _step, agent_decisions, compressors, output))
         if config['write_lp'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".lp")
         if config['write_sol'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".sol")
         # store solution in dictionary
@@ -63,6 +64,16 @@ def simulator_step(agent_decisions, step, process_type):
         for pipe in co.pipes:
             states[step]['q_in'][pipe] = sol["var_pipe_Qo_in[%s,%s]" % pipe]
             states[step]['q_out'][pipe] = sol["var_pipe_Qo_out[%s,%s]" % pipe]
+        ############## short test begin
+        if False:
+            #for pipe in co.special:
+            #    if 'N' in pipe[0]:
+            #        simulator_step.pipe_value += sol['var_pipe_Qo_out[%s,%s]' % pipe]
+            for key in sol:
+                if key.startswith("nom_entry_slack_DA"):
+                    print(f"{key} value: {sol[key]}")
+            #print(f"{pipe} has value {simulator_step.pipe_value/8}")
+        ############## short test end
         ###############
         ### the following can be used to generate a new initial state.
         ###############

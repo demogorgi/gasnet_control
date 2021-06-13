@@ -35,6 +35,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
                  random_nominations=True, print_actions=False):
+        print("starting initialization")
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
@@ -233,6 +234,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._action_counter = 0
         # set simulation_step counter in urmel to 0
         simulator_step.counter = 0
+        print("ending initialization")
 
     def action_spec(self):
         return self._action_spec
@@ -321,6 +323,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # is restarted
             return self.reset()
 
+        #print(f"performing an agent step number {self._action_counter}")
         ### simulate one step
         big_step = self._action_counter
         # convert the action vector such that urmel can use it
@@ -368,6 +371,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         step = 0
         agent_step_flow_violation = {}
         pressure_violations = set()
+
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
             # apply the actions; first valves, then resistors, then compressors

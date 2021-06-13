@@ -4,3 +4,5 @@ instances/*/__pycache__
 *.swp
 instances/policy*
 instances/timestep8s/
+gurobi.log
+dat
