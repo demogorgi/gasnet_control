@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import instances.da2.connections
 from urmel import *
@@ -6,14 +8,14 @@ import functions as funcs
 from params import *
 
 
-def getDecision(decision, timestep):
-    for i in range(timestep, -17, -1):
-        if i in decision:
-            return decision[i]
+def get_decision(decisions, time_step):
+    for i in range(time_step, -17, -1):
+        if i in decisions:
+            return decisions[i]
     return None
 
 
-def getBenchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
+def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
     init_states = funcs.get_init_scenario()
 
     low_entry = co.special[1]
@@ -48,18 +50,18 @@ def getBenchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
     for episode in range(n_episodes):
         time_index = episode * simulation_steps
 
-        low_exit_nom = np.abs(getDecision(
+        low_exit_nom = np.abs(get_decision(
             init_decisions["exit_nom"]["X"][low_exit], time_index
         ))
-        high_exit_nom = np.abs(getDecision(
+        high_exit_nom = np.abs(get_decision(
             init_decisions["exit_nom"]["X"][high_exit], time_index
         ))
 
-        low_entry_nom = getDecision(
+        low_entry_nom = get_decision(
             init_decisions["entry_nom"]["S"][joiner(low_entry)],
             time_index + time_offset
         )
-        high_entry_nom = getDecision(
+        high_entry_nom = get_decision(
             init_decisions["entry_nom"]["S"][joiner(low_entry)],
             time_index + time_offset
         )
@@ -116,7 +118,7 @@ def getBenchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
                 search_values = resistor_values
 
             # control the search value in dependence of the avg flow
-            if np.abs(low_avg_flow - low_entry_nom) <= 50.0:
+            if np.abs(low_avg_flow - low_entry_nom) <= 1.0:
                 iterations = 10
                 decisions["zeta"].append(resistor_value)
                 decisions["compressor"].append(compressor_switch)
@@ -155,7 +157,7 @@ def getBenchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
     return decisions
 
 
-def performBenchmark(decisions, simulation_steps=8, n_episodes=10):
+def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
     ub_entry_violation = 1100
     n_entries = 2
     simulator_step.counter = 0
@@ -254,5 +256,44 @@ def performBenchmark(decisions, simulation_steps=8, n_episodes=10):
         print("#" * 15 + f"End of evaluation of step {episode}" + "#" * 9 + "\n\n")
 
 
-decision = getBenchmark()
-performBenchmark(decision)
+# main program
+# handle the input via a command line execution
+steps_per_episode = config['nomination_freq']
+try:
+    time_horizon = int(sys.argv[2])
+except ValueError:
+    raise ValueError(f"Second argument after file name has to give the time "
+                     f"horizon as integer. {sys.argv[2]} is not of type int.")
+if time_horizon % steps_per_episode != 0:
+    raise ValueError(f"The time horizon {time_horizon} in #steps has to be "
+                     f"dividable by {steps_per_episode}.\n"
+                     f"Calculation is time horizon = steps per episode (here "
+                     f"{steps_per_episode}) * number of episodes.")
+else:
+    amount_episodes = time_horizon / steps_per_episode
+
+if len(sys.argv) > 4:
+    flow_calc_for_benchmark = sys.argv[4]
+    if flow_calc_for_benchmark in ["y", "f", 1, "1"]:
+        flow_calc_for_benchmark = True
+    else:
+        flow_calc_for_benchmark = False
+else:
+    flow_calc_for_benchmark = False
+
+# if given correctly, get the benchmark based on the input
+print("#"*20 + " CALCULATING BENCHMARK " + "#"*20)
+decision = get_benchmark(
+    simulation_steps=steps_per_episode,
+    n_episodes=amount_episodes,
+    flow_variant=flow_calc_for_benchmark
+)
+
+# perform the benchmark afterwards, but wait a little for user attentiveness
+print("#"*20 + " PERFORMING BENCHMARK " + "#"*20)
+time.sleep(15)
+perform_benchmark(
+    decisions=decision,
+    simulation_steps=steps_per_episode,
+    n_episodes=amount_episodes
+)
