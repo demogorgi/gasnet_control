@@ -62,7 +62,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
             time_index + time_offset
         )
         high_entry_nom = get_decision(
-            init_decisions["entry_nom"]["S"][joiner(low_entry)],
+            init_decisions["entry_nom"]["S"][joiner(high_entry)],
             time_index + time_offset
         )
 
@@ -119,7 +119,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
 
             # control the search value in dependence of the avg flow
             if np.abs(low_avg_flow - low_entry_nom) <= 1.0:
-                iterations = 10
+                iterations = 15
                 decisions["zeta"].append(resistor_value)
                 decisions["compressor"].append(compressor_switch)
                 decisions["gas"].append(compressor_gas)
@@ -147,7 +147,17 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
                 resistor_values = search_values
 
             iterations += 1
-            searching_decision = iterations < 10
+            searching_decision = iterations < 15
+
+            if not searching_decision:
+                if compressor_case \
+                        and low_avg_flow - low_entry_nom > 5.0 \
+                        and compressor_gas < 0.01:
+                    compressor_case = False
+                    compressor_gas = 0.0
+                    compressor_switch = 1
+                    iterations = 0
+                    searching_decision = True
 
         if len(decisions["zeta"]) <= episode:
             decisions["zeta"].append(resistor_value)
@@ -270,7 +280,7 @@ if time_horizon % steps_per_episode != 0:
                      f"Calculation is time horizon = steps per episode (here "
                      f"{steps_per_episode}) * number of episodes.")
 else:
-    amount_episodes = time_horizon / steps_per_episode
+    amount_episodes = int(time_horizon / steps_per_episode)
 
 if len(sys.argv) > 4:
     flow_calc_for_benchmark = sys.argv[4]
