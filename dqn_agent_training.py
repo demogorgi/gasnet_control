@@ -165,7 +165,7 @@ def dqn_agent_training(
 
     print("training/eval env init worked")
 
-    fc_layer_param = (250,)
+    fc_layer_param = (100,)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
     num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
