@@ -1,0 +1,47 @@
+# Decisions of the trader agent
+exit_nom:
+    X:
+        S1I:
+            0: -500
+        S2I: 
+            0: -500
+        X1:
+            0: -100
+        X2:
+            0: -100
+
+entry_nom:
+    S:
+        S1P_aux0^S1P:
+            -16: 0
+        S2P_aux0^S2P:
+            -16: 0
+        E1_aux0^E1:
+            -16: 1200
+        E2_aux0^E2:
+            -16: 0
+
+# Decisions of the dispatcher agent
+#va:
+#    VA:
+
+zeta:
+    RE:
+        A6^A7_aux:
+            0: 0
+        A11^A10_aux:
+            0: 0
+
+gas:
+    CS:
+        A15^A14:
+            0: 0.5
+        A2^A3:
+            0: 0.5
+
+compressor:
+    CS:
+        A15^A14:
+            0: 1
+        A2^A3:
+            0: 1
