@@ -164,7 +164,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
             decisions["compressor"].append(compressor_switch)
             decisions["gas"].append(compressor_gas)
 
-    return decisions
+    return decisions, init_decisions
 
 
 def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
@@ -293,11 +293,18 @@ else:
 
 # if given correctly, get the benchmark based on the input
 print("#"*20 + " CALCULATING BENCHMARK " + "#"*20)
-decision = get_benchmark(
+decision, decisions_as_yaml = get_benchmark(
     simulation_steps=steps_per_episode,
     n_episodes=amount_episodes,
     flow_variant=flow_calc_for_benchmark
 )
+
+# write the decisions into a separate yml file if wanted
+with open(
+        path.join(data_path, 'benchmark_decisions.yml'),
+        'w'
+) as benchmark_file:
+    yaml.dump(decisions_as_yaml, benchmark_file)
 
 # perform the benchmark afterwards, but wait a little for user attentiveness
 print("#"*20 + " PERFORMING BENCHMARK " + "#"*20)
