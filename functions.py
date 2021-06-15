@@ -5,6 +5,7 @@
 import importlib
 import sys
 import re
+import numpy as np
 wd = sys.argv[1].replace("/",".")
 wd = re.sub(r'\.$', '', wd)
 
@@ -175,3 +176,16 @@ def xir(i,zeta):
     # Wenn eine Regelung nicht in beide Richtungen erwünscht ist, kann eine Rückschlagklappe hinzugefügt werden.
     # Eine Regelung in beide Richtungen ist mit der Simone-orientierten Modellierung nicht möglich.
     return zeta / ( 2 * A(co.diameter[i]) );
+
+
+def logarithmic_fit(x, y):
+    assert len(x) == len(y)
+
+    x = np.array(x)
+    y = np.array(y)
+
+    if min(x) < 0:
+        raise ValueError("Minimum of x has to be >= 0")
+
+    parameters = np.polyfit(np.log(x + 1), y, 1)
+    return lambda t: parameters[0] * np.log(t + 1) + parameters[1]
