@@ -35,7 +35,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
                  random_nominations=True, print_actions=False):
-        print("starting initialization")
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
@@ -234,7 +233,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._action_counter = 0
         # set simulation_step counter in urmel to 0
         simulator_step.counter = 0
-        print("ending initialization")
 
     def action_spec(self):
         return self._action_spec
