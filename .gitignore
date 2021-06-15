@@ -6,3 +6,4 @@ instances/policy*
 instances/timestep8s/
 gurobi.log
 dat
+__pycache__/
