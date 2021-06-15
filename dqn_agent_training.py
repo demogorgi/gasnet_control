@@ -29,7 +29,7 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-on_cluster = False
+on_cluster = True
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
