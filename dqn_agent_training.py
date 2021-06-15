@@ -29,7 +29,7 @@ from tf_agents.utils import common
 import network_environment
 
 # hyperparameters
-on_cluster = True
+on_cluster = False
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
@@ -43,11 +43,12 @@ else:
     in_start_epsilon = 1.0
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
-in_learning_rates = [1e-4]
+in_learning_rates = [1e-5]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
 #in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 in_gradient_clippings = [1.0] #dont forget None value
+
 
 def dqn_agent_training(
         in_num_iterations=20000,
@@ -60,7 +61,6 @@ def dqn_agent_training(
         in_gradient_clipping=1.0,
         in_show_plot=True
 ):
-    print("Getting into dqn agent training")
     num_iterations = in_num_iterations    # @param {type:"integer"}
 
     initial_collect_steps = 100  # @param {type:"integer"}
@@ -108,7 +108,6 @@ def dqn_agent_training(
 
     show_plot = in_show_plot
 
-    print("parameter init worked")
     ###### TESTING FUNCTIONALITY ############
     env = network_environment.\
         GasNetworkEnv(discretization_steps=discretization,
@@ -135,8 +134,6 @@ def dqn_agent_training(
 
     action = np.array(35, dtype=np.int32)
 
-    print("reset of environment worked")
-
     if on_cluster:
         next_time_step0 = env.step(action)
 
@@ -162,8 +159,6 @@ def dqn_agent_training(
 
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
-
-    print("training/eval env init worked")
 
     fc_layer_param = (100,)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
@@ -218,8 +213,6 @@ def dqn_agent_training(
     )
 
     agent.initialize()
-
-    print("agent init worked")
 
     # define policies
     eval_policy = agent.policy
@@ -290,7 +283,6 @@ def dqn_agent_training(
 
     iterator = iter(dataset)
 
-    print("init replay buffer worked")
     ##### actual training procedure
     agent.train = common.function(agent.train)
 
@@ -305,7 +297,7 @@ def dqn_agent_training(
     # initialize the necessary variables for saving the policy for later use
     policy_name = f"policy_{fc_layer_param}realQ_" +\
                   f"iters{int(num_iterations/1000)}_" +\
-                  f"rate{str(learning_rate).replace('0', '')}_" +\
+                  f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +\
                   f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +\
                 f"update{target_update_steps}_" +\
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +\
@@ -318,8 +310,6 @@ def dqn_agent_training(
         policy_dir = os.path.join(temp_dir, policy_name)
     tf_policy_saver = policy_saver.PolicySaver(agent.policy)
     start_time = time.time()
-
-    print("init policy worked. Starting training")
 
     # train
     for _ in range(num_iterations):
@@ -351,7 +341,7 @@ def dqn_agent_training(
             out_path = f'/home/hpc/mpwm/mpwm023h/masterthesis/outfiles/'
             out_file_name = f"loss_{fc_layer_param}realQ_" + \
                         f"iters{int(num_iterations/1000)}_" + \
-                    f"rate{str(learning_rate).replace('0', '')}_" + \
+                    f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" + \
                     f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" + \
                     f"update{target_update_steps}_" + \
                     f"{'epsilondecay' if use_epsilon else 'boltzmann'}" + \
@@ -384,7 +374,7 @@ def dqn_agent_training(
     plt.savefig(fig_path +
                 f"reward_{fc_layer_param}realQ_" +
                 f"iters{int(num_iterations/1000)}_" +
-                f"rate{str(learning_rate).replace('0', '')}_" +
+                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
@@ -401,7 +391,7 @@ def dqn_agent_training(
     plt.savefig(fig_path +
                 f"loss_{fc_layer_param}realQ_" +
                 f"iters{int(num_iterations/1000)}_" +
-                f"rate{str(learning_rate).replace('0', '')}_" +
+                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +
                 f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
                 f"update{target_update_steps}_" +
                 f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
