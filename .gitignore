@@ -1,5 +1,7 @@
 instances/*/output
 instances/*/__pycache__
+instances/*/benchmark_decisions.yml
+instances/*/config.yml
 *~
 *.swp
 instances/policy*

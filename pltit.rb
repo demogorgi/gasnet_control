@@ -22,16 +22,18 @@ Dir.glob('instances/' + ARGV[0] + '/output/*.sol').sort.each do |sol_filename|
 end
 hash2csv(data, 'pltit.csv')
 
-plt  = "set key autotitle columnhead noenhanced outside center bottom\n"
+plt = "set terminal qt size 1200, 400 font 'Helvetica, 6'\n"
+plt += "set key autotitle columnhead noenhanced outside center bottom\n"
 plt += "set datafile separator ';'\n"
 plt += "set xtics 0, 8\n"
 plt += "set grid\n"
+#plt += "set size ratio 0.2\n"
 #
 # general setup
 #plt += "plot for [i=1:10] 'pltit.csv' u i w steps"
 #
 # special setup for nom vs. flow
-plt += "plot 'pltit.csv' u 1 w steps lt 1 lw 2, 'pltit.csv' u 2 w steps lt 2 lw 2,  'pltit.csv' u 3 w steps lt 1 dt 2,  'pltit.csv' u 4 w steps lt 2 dt 2"
+plt += "plot 'pltit.csv' u 1 w steps lt 1 lw 1, 'pltit.csv' u 2 w steps lt 2 lw 1,  'pltit.csv' u 3 w steps lt 1 dt 2,  'pltit.csv' u 4 w steps lt 2 dt 2"
 #
 File.write('pltit.plt', plt)
 system('gnuplot -p pltit.plt')
