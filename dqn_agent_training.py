@@ -47,7 +47,7 @@ in_learning_rates = [1e-5]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
 #in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
-in_gradient_clippings = [1.0] #dont forget None value
+in_gradient_clippings = [None] #dont forget None value
 
 
 def dqn_agent_training(
