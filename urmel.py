@@ -44,9 +44,9 @@ def simulator_step(agent_decisions, step, process_type):
         print ("model status: ", status)
     if status == GRB.OPTIMAL: # == 2
         # plot data with gnuplot
-        # if config['gnuplot'] and ( process_type == "sim" or config["debug"] ):
-        #     if compressors:
-        #         os.system(plot(step, _step, agent_decisions, compressors, output))
+        if config['gnuplot'] and ( process_type == "sim" or config["debug"] ):
+             if compressors:
+                 os.system(plot(step, _step, agent_decisions, compressors, output))
         if config['write_lp'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".lp")
         if config['write_sol'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".sol")
         # store solution in dictionary
