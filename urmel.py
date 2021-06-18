@@ -30,15 +30,23 @@ def simulator_step(agent_decisions, step, process_type):
     # control output
     m.params.logToConsole = config['grb_console']
     m.params.logfile = config['grb_logfile']
-    # optimize the model ( = do a simulation step)
-    m.optimize()
-    # get the model status
-    status = m.status
+    # tuned parameters
+    m.params.heuristics = 0
+    m.params.cuts = 0
     # generate often used strings
     _step = "_" + str(step).rjust(5, "0")
     if config["debug"]:
         _step += "_" + str(simulator_step.counter).rjust(5, "0")
     step_files_path = "".join([output, "/", config["name"], _step]).replace("\\", "/")
+    # part can be used to tune model
+    #m.tune()
+    #for i in range(m.tuneResultCount):
+    #    m.getTuneResult(i)
+    #    m.write(step_files_path + '_tune' + str(i) + '_' + str(step)+'.prm')
+    # optimize the model ( = do a simulation step)
+    m.optimize()
+    # get the model status
+    status = m.status
     # if solved to optimallity
     if config['urmel_console_output']:
         print ("model status: ", status)
