@@ -23,8 +23,11 @@ if not os.path.exists(output):
 
 def simulator_step(agent_decisions, step, process_type):
 
-    simulator_step.counter += 1
-    # print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
+    if hasattr(simulator_step, 'counter'):
+        simulator_step.counter += 1
+    else:
+        simulator_step.counter = 0
+    #print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
     # m ist the simulator model with agent decisisons, compressor specs and timestep length incorporated
     m = simulate(agent_decisions, compressors, step, dt)
     # control output
@@ -38,11 +41,11 @@ def simulator_step(agent_decisions, step, process_type):
     if config["debug"]:
         _step += "_" + str(simulator_step.counter).rjust(5, "0")
     step_files_path = "".join([output, "/", config["name"], _step]).replace("\\", "/")
-    # part can be used to tune model
+    # the next part can be used to tune model. tuned parameters are set a few lines above below "# tuned parameters"
     #m.tune()
     #for i in range(m.tuneResultCount):
     #    m.getTuneResult(i)
-    #    m.write(step_files_path + '_tune' + str(i) + '_' + str(step)+'.prm')
+    #    m.write(step_files_path + '_tune' + str(i) + '.prm')
     # optimize the model ( = do a simulation step)
     m.optimize()
     # get the model status
