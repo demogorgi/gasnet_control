@@ -42,12 +42,18 @@ if len(sys.argv) > 5:
 else:
     in_start_epsilon = 1.0
 
+if len(sys.argv) > 6:
+    in_gradient_clippings = [float(sys.argv[6]) if sys.argv != 'None'
+                             else None]  # dont forget None value
+else:
+    in_gradient_clippings = [1.0]  # dont forget None value
+
+
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
 in_learning_rates = [1e-6]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
-#in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
-in_gradient_clippings = [None] #dont forget None value
+# in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
 
 def dqn_agent_training(
@@ -160,7 +166,7 @@ def dqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
-    fc_layer_param = (100,)
+    fc_layer_param = (30,)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
     num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
