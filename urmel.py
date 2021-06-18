@@ -36,7 +36,7 @@ def simulator_step(agent_decisions, step, process_type):
     status = m.status
     # generate often used strings
     _step = "_" + str(step).rjust(5, "0")
-    if config["ai"]:
+    if config["debug"]:
         _step += "_" + str(simulator_step.counter).rjust(5, "0")
     step_files_path = "".join([output, "/", config["name"], _step]).replace("\\", "/")
     # if solved to optimallity

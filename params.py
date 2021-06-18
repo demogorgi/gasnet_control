@@ -42,8 +42,6 @@ config = {
     "nomination_freq": 8,
     # controlling random nomination values [start(opt),stop,step(opt)]
     "randrange": [0,1101,50],
-    # Is AI control active?
-    "ai": False
 }
 
 # read manual file with configs
