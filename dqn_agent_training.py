@@ -46,7 +46,7 @@ if len(sys.argv) > 6:
     in_gradient_clippings = [float(sys.argv[6]) if sys.argv != 'None'
                              else None]  # dont forget None value
 else:
-    in_gradient_clippings = [1.0]  # dont forget None value
+    in_gradient_clippings = [None]  # dont forget None value
 
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
