@@ -21,9 +21,6 @@ with open(path.join(data_path, 'init_decisions.yml')) as file:
     agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
     print(agent_decisions)
 
-simulator_step.counter = 0
-# own parameter by Adrian
-# simulator_step.pipe_value = 0
 for i in range(numSteps):
     print("\nstep %d" % i)
 

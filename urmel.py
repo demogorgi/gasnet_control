@@ -27,7 +27,8 @@ def simulator_step(agent_decisions, step, process_type):
         simulator_step.counter += 1
     else:
         simulator_step.counter = 0
-    #print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
+    if config['urmel_console_output']:
+        print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
     # m ist the simulator model with agent decisisons, compressor specs and timestep length incorporated
     m = simulate(agent_decisions, compressors, step, dt)
     # control output
