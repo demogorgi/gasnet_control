@@ -101,7 +101,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
                 compressor_switch
 
             low_avg_flow = 0
-            simulator_step.counter = 0
+            #simulator_step.counter = 0
             for step in range(simulation_steps):
                 solution = simulator_step(
                     init_decisions,
@@ -170,7 +170,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
 def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
     ub_entry_violation = 1100
     n_entries = 2
-    simulator_step.counter = 0
+    #simulator_step.counter = 0
 
     with open(path.join(data_path, 'init_decisions.yml')) as init_file:
         init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)

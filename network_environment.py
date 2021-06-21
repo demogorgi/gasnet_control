@@ -232,7 +232,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # counter to come to an end
         self._action_counter = 0
         # set simulation_step counter in urmel to 0
-        simulator_step.counter = 0
+        #simulator_step.counter = 0
 
     def action_spec(self):
         return self._action_spec
