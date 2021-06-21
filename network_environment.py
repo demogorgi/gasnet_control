@@ -504,6 +504,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                      for i in range(n_press_viol)])
         if not self._episode_ended:
             agent_step_reward = 1.0 - (pressure_violation + flow_violation)
+            with open("rewardfile.csv", "a+") as rewardcsv:
+                rewardcsv.write(str(agent_step_reward) + ";")
         if self._print_actions:
             print(f"This step lead to a reward of {agent_step_reward}")
             print(f"The accumulated flow violations are at "
