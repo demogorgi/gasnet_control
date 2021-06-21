@@ -213,7 +213,7 @@ def dqn_agent_training(
         #n_step_update=10,
         gradient_clipping=gradient_clipping,
         target_update_period=target_update_steps,
-        train_step_counter=train_step_counter,
+        train_step_counter=global_step,
         epsilon_greedy=epsilon if use_epsilon else None,
         boltzmann_temperature=None if use_epsilon else boltzmann_temperatur
     )
@@ -319,7 +319,7 @@ def dqn_agent_training(
 
     # train
     for _ in range(num_iterations):
-        # collect a few steps using collect_policy and save to the replay buffer
+        # collect a few steps using collect_policy & save to the replay buffer
         collect_data(train_env, agent.collect_policy, replay_buffer,
                      collect_steps_per_iteration)
 
