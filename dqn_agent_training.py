@@ -94,7 +94,7 @@ def dqn_agent_training(
         )
     else:
         epsilon = start_epsilon
-        
+
     boltzmann_temperatur = in_boltzmann_temperatur
     use_epsilon = in_use_epsilon
 
@@ -305,15 +305,28 @@ def dqn_agent_training(
     returns = [avg_return]
     losses = []
 
+    # define the file name specificities
+    file_spec = f"{fc_layer_param}realQ_" +\
+                f"iters{int(num_iterations/1000)}_" +\
+                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_"
+    if gradient_clipping is not None:
+        file_spec += f"clip{int(gradient_clipping)}_"
+    else:
+        file_spec += "None_"
+
+    file_spec += f"update{target_update_steps}_"
+    if use_epsilon:
+        if decaying_epsilon:
+            file_spec += f"epsilondecay{str(start_epsilon)}to{str(end_epsilon)}"
+        else:
+            file_spec += f"epsilon{str(start_epsilon)}"
+    else:
+        file_spec += f"boltzmann{boltzmann_temperatur}"
+
+
+
     # initialize the necessary variables for saving the policy for later use
-    policy_name = f"policy_{fc_layer_param}realQ_" +\
-                  f"iters{int(num_iterations/1000)}_" +\
-                  f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +\
-                  f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +\
-                f"update{target_update_steps}_" +\
-                f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +\
-                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +\
-                f"{boltzmann_temperatur if not use_epsilon else ''}"
+    policy_name = f"policy_" + file_spec
     if on_cluster:
         policy_dir = f"/home/hpc/mpwm/mpwm023h/masterthesis/policies/" \
                      + policy_name
@@ -350,14 +363,7 @@ def dqn_agent_training(
     if on_cluster:
         try:
             out_path = f'/home/hpc/mpwm/mpwm023h/masterthesis/outfiles/'
-            out_file_name = f"loss_{fc_layer_param}realQ_" + \
-                        f"iters{int(num_iterations/1000)}_" + \
-                    f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" + \
-                    f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" + \
-                    f"update{target_update_steps}_" + \
-                    f"{'epsilondecay' if use_epsilon else 'boltzmann'}" + \
-                    f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" + \
-                    f"{boltzmann_temperatur if not use_epsilon else ''}.out"
+            out_file_name = "loss_reward_" + file_spec + ".out"
             with open(out_path + out_file_name, 'a+') as out_file:
                 out_file.write("returns:\n")
                 for ret in returns:
@@ -382,15 +388,7 @@ def dqn_agent_training(
     else:
         fig_path = f"/home/adi/Uni/SoSe21/Masterarbeit/" +\
                           f"reward_exppress_contflow/"
-    plt.savefig(fig_path +
-                f"reward_{fc_layer_param}realQ_" +
-                f"iters{int(num_iterations/1000)}_" +
-                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +
-                f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
-                f"update{target_update_steps}_" +
-                f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
-                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
-                f"{boltzmann_temperatur if not use_epsilon else ''}.pdf")
+    plt.savefig(fig_path + "reward_" + file_spec + ".pdf")
     if show_plot:
         plt.show()
 
@@ -399,15 +397,7 @@ def dqn_agent_training(
     plt.plot(iterations, losses)
     plt.xlabel('Iterations')
     plt.ylabel('Loss')
-    plt.savefig(fig_path +
-                f"loss_{fc_layer_param}realQ_" +
-                f"iters{int(num_iterations/1000)}_" +
-                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_" +
-                f"clip{int(gradient_clipping) if gradient_clipping is not None else 'None'}_" +
-                f"update{target_update_steps}_" +
-                f"{'epsilondecay' if use_epsilon else 'boltzmann'}" +
-                f"{str(start_epsilon)+'to'+str(end_epsilon) if use_epsilon else ''}" +
-                f"{boltzmann_temperatur if not use_epsilon else ''}.pdf")
+    plt.savefig(fig_path + "loss_" + file_spec + ".pdf")
     if show_plot:
         plt.show()
 
