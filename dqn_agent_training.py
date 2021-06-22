@@ -53,6 +53,7 @@ in_num_iterations_options = [100000]#[5000, 20000, 50000]
 in_learning_rates = [1e-4]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
+decaying_epsilon = False
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
 
@@ -84,12 +85,16 @@ def dqn_agent_training(
     global_step = tf.compat.v1.train.get_or_create_global_step()
     start_epsilon = in_start_epsilon
     end_epsilon = in_end_epsilon
-    epsilon = tf.compat.v1.train.polynomial_decay(
-        start_epsilon,
-        global_step,
-        num_iterations,
-        end_learning_rate=end_epsilon
-    )
+    if decaying_epsilon:
+        epsilon = tf.compat.v1.train.polynomial_decay(
+            start_epsilon,
+            global_step,
+            num_iterations,
+            end_learning_rate=end_epsilon
+        )
+    else:
+        epsilon = start_epsilon
+        
     boltzmann_temperatur = in_boltzmann_temperatur
     use_epsilon = in_use_epsilon
 
