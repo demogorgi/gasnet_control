@@ -48,9 +48,12 @@ if len(sys.argv) > 6:
 else:
     in_gradient_clippings = [None]  # dont forget None value
 
+if len(sys.argv) > 7:
+    in_learning_rates = [float(sys.argv[7])]
+else:
+    in_learning_rates = [1e-4]
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
-in_learning_rates = [1e-4]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
 decaying_epsilon = False
