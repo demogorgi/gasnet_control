@@ -53,6 +53,23 @@ if len(sys.argv) > 7:
 else:
     in_learning_rates = [1e-4]
 
+if len(sys.argv) > 8:
+    layers = sys.argv[8].split("-")
+    if len(layers) == 1:
+        fc_layer_param = (int(layers[0]),)
+    elif len(sys.argv[8].split("-")) == 2:
+        layer1 = int(layers[0])
+        layer2 = int(layers[1])
+        fc_layer_param = (layer1,layer2)
+    else:
+        layer1 = int(layers[0])
+        layer2 = int(layers[1])
+        layer3 = int(layers[2])
+        fc_layer_param = (layer1,layer2,layer3)
+else:
+    fc_layer_param = (250,)
+
+
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
@@ -174,7 +191,6 @@ def dqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
-    fc_layer_param = (250,)
     action_tensor_spec = tensor_spec.from_spec(env.action_spec())
     num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
