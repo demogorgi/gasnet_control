@@ -40,7 +40,7 @@ else:
 if len(sys.argv) > 5:
     in_start_epsilon = float(sys.argv[5])
 else:
-    in_start_epsilon = 1.0
+    in_start_epsilon = 0.1
 
 if len(sys.argv) > 6:
     in_gradient_clippings = [float(sys.argv[6]) if sys.argv != 'None'
@@ -256,7 +256,6 @@ def dqn_agent_training(
         avg_return = total_return / num_episodes
         return avg_return.numpy()[0]
 
-
     # testing above function
     # compute_avg_return(eval_env, random_policy, num_eval_episodes)
 
@@ -266,7 +265,6 @@ def dqn_agent_training(
         batch_size=train_env.batch_size,
         max_length=replay_buffer_max_length
     )
-
 
     # define and test data collection
     def collect_step(environment, policy, buffer):
@@ -278,11 +276,9 @@ def dqn_agent_training(
         # add trajectory to the replay buffer
         buffer.add_batch(traj)
 
-
     def collect_data(environment, policy, buffer, steps):
         for _ in range(steps):
             collect_step(environment, policy, buffer)
-
 
     collect_data(train_env, random_policy, replay_buffer, initial_collect_steps)
 
