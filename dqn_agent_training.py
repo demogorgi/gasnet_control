@@ -142,7 +142,7 @@ def dqn_agent_training(
     discretization = 10 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
-    random_entry_nominations = True   # @param {type:"boolean"}
+    random_entry_nominations = False   # @param {type:"boolean"}
 
     show_plot = in_show_plot
 
