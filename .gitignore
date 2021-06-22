@@ -10,3 +10,4 @@ instances/timestep8s/
 gurobi.log
 dat
 __pycache__/
+rewardfile.*

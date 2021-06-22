@@ -69,11 +69,18 @@ if len(sys.argv) > 8:
 else:
     fc_layer_param = (250,)
 
+if len(sys.argv) > 9:
+    if sys.argv == 'T':
+        decaying_epsilon = True
+    else:
+        decaying_epsilon = False
+else:
+    decaying_epsilon = False
+
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
 in_end_epsilons = [1e-4]
 in_boltzmann_temperatures = []
-decaying_epsilon = False
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
 
