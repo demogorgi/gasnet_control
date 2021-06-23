@@ -43,7 +43,7 @@ else:
     in_start_epsilon = 0.1
 
 if len(sys.argv) > 6:
-    in_gradient_clippings = [float(sys.argv[6]) if sys.argv != 'None'
+    in_gradient_clippings = [float(sys.argv[6]) if sys.argv[6] != 'None'
                              else None]  # dont forget None value
 else:
     in_gradient_clippings = [None]  # dont forget None value
