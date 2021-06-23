@@ -334,14 +334,15 @@ def dqn_agent_training(
     if gradient_clipping is not None:
         file_spec += f"clip{int(gradient_clipping)}_"
     else:
-        file_spec += "None_"
+        file_spec += "clipNone_"
 
     file_spec += f"update{target_update_steps}_"
     if use_epsilon:
         if decaying_epsilon:
-            file_spec += f"epsilondecay{str(start_epsilon)}to{str(end_epsilon)}"
+            file_spec += f"epsilondecay{str(start_epsilon).replace('.', '')}"
+            file_spec += f"to{str(end_epsilon).replace('.', '')}"
         else:
-            file_spec += f"epsilon{str(start_epsilon)}"
+            file_spec += f"epsilon{str(start_epsilon).replace('.', '')}"
     else:
         file_spec += f"boltzmann{boltzmann_temperatur}"
 
