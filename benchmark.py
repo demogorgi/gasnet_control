@@ -7,6 +7,8 @@ from model import *
 import functions as funcs
 from params import *
 
+max_iterations = 15
+
 
 def get_decision(decisions, time_step):
     for i in range(time_step, -17, -1):
@@ -15,7 +17,8 @@ def get_decision(decisions, time_step):
     return None
 
 
-def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
+def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
+                  rounded_decimal=None):
     init_states = funcs.get_init_scenario()
 
     low_entry = co.special[1]
@@ -101,7 +104,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
                 compressor_switch
 
             low_avg_flow = 0
-            #simulator_step.counter = 0
+            # simulator_step.counter = 0
             for step in range(simulation_steps):
                 solution = simulator_step(
                     init_decisions,
@@ -119,7 +122,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
 
             # control the search value in dependence of the avg flow
             if np.abs(low_avg_flow - low_entry_nom) <= 1.0:
-                iterations = 15
+                iterations = max_iterations
                 decisions["zeta"].append(resistor_value)
                 decisions["compressor"].append(compressor_switch)
                 decisions["gas"].append(compressor_gas)
@@ -143,11 +146,28 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
 
             if compressor_case:
                 compressor_values = search_values
+                # rounding needed -> check new interval bounds for equality
+                if rounded_decimal is not None:
+                    value1 = np.round(compressor_values[0], rounded_decimal)
+                    value2 = np.round(compressor_values[1], rounded_decimal)
+                    if value1 == value2:
+                        compressor_gas = value1
+                        # cancel search with that criterion
+                        iterations = max_iterations
             else:
                 resistor_values = search_values
+                # rounding needed -> check new interval bounds for equality
+                if rounded_decimal is not None:
+                    # rounding required two places to the left, thus -2
+                    value1 = np.round(resistor_values[0], rounded_decimal - 2)
+                    value2 = np.round(resistor_values[1], rounded_decimal - 2)
+                    if value1 == value2:
+                        resistor_value = value1
+                        # ancel search with that criterion
+                        iterations = max_iterations
 
             iterations += 1
-            searching_decision = iterations < 15
+            searching_decision = iterations < max_iterations
 
             if not searching_decision:
                 if compressor_case \
@@ -170,7 +190,8 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False):
 def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
     ub_entry_violation = 1100
     n_entries = 2
-    #simulator_step.counter = 0
+    # simulator_step.counter = 0
+    overall_reward = 0.0
 
     with open(path.join(data_path, 'init_decisions.yml')) as init_file:
         init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
@@ -254,6 +275,7 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
                                      (2**n_press_viol - 1)
                                      for i in range(n_press_viol)])
         reward = 1.0 - (pressure_violation + flow_violation)
+        overall_reward += reward
 
         print(f"This step lead to a reward of {reward}")
         print(f"The accumulated flow violations are at "
@@ -264,6 +286,8 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
               f" not relevant and same as for agent")
 
         print("#" * 15 + f"End of evaluation of step {episode}" + "#" * 9 + "\n\n")
+
+    print(f"The overall reward is {overall_reward}")
 
 
 # main program
@@ -296,7 +320,8 @@ print("#"*20 + " CALCULATING BENCHMARK " + "#"*20)
 decision, decisions_as_yaml = get_benchmark(
     simulation_steps=steps_per_episode,
     n_episodes=amount_episodes,
-    flow_variant=flow_calc_for_benchmark
+    flow_variant=flow_calc_for_benchmark,
+    rounded_decimal=1
 )
 
 # write the decisions into a separate yml file if wanted
