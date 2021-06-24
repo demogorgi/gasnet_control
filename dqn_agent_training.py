@@ -70,7 +70,7 @@ else:
     fc_layer_param = (250,)
 
 if len(sys.argv) > 9:
-    if sys.argv == 'T':
+    if sys.argv[9] == 'T':
         decaying_epsilon = True
     else:
         decaying_epsilon = False
