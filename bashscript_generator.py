@@ -2,12 +2,12 @@ import os
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/dqn_template.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
-update_steps = [200, 500, 2000, 5000]
-epsilons = [0.5, 0.25, 0.1, 0.05]
-gradient_clippings = ['None', 1.0, 10.0]
-learning_rates = [1e-3, 1e-4, 1e-5, 1e-6]
+update_steps = [20, 50, 200, 500, 2000] #[200, 500, 2000, 5000]
+epsilons = [1]#[0.5, 0.25, 0.1, 0.05]
+gradient_clippings = ['None', 1.0] #['None', 1.0, 10.0]
+learning_rates = [1e-2] #[1e-3, 1e-4, 1e-5, 1e-6]
 layers = [(50,), (100,), (250,)]
-epsilon_decay = False
+epsilon_decay = True #False
 
 if __name__ == '__main__':
     drop_path = destination_path + "scripts_20210622/"
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                 for epsilon in epsilons:
                     epsilon_string = f"epsilon{str(epsilon).replace('.', '')}"
                     if epsilon_decay:
-                        epsilon_string += "to1e4"
+                        epsilon_string += "to01"
                     epsilon_path = net_path + epsilon_string + "/"
                     try:
                         os.makedirs(epsilon_path)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
                         if epsilon_decay:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
-                                "to1e4")
+                                "to01")
                         else:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
-                        bashfile_name += f"{'to1e4' if epsilon_decay else ''}"
+                        bashfile_name += f"{'to01' if epsilon_decay else ''}"
                         bashfile_name += f"_rate"
                         bashfile_name += '{:.0e}'.format(rate).replace('0', '')
                         if clip == 'None':
