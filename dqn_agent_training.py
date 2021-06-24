@@ -79,7 +79,7 @@ else:
 
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
-in_end_epsilons = [1e-4]
+in_end_epsilons = [0.1]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
