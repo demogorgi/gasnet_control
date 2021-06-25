@@ -221,6 +221,13 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
             decisions["zeta"].append(best_current_decision[0])
             decisions["compressor"].append(best_current_decision[1])
             decisions["gas"].append(best_current_decision[2])
+            # update in init decisions
+            init_decisions["zeta"]["RE"][resistor][time_index] = \
+                float(best_current_decision[0])
+            init_decisions["compressor"]["CS"][compressor][time_index] = \
+                best_current_decision[1]
+            init_decisions["gas"]["CS"][compressor][time_index] = \
+                best_current_decision[2]
 
     return decisions, init_decisions
 
