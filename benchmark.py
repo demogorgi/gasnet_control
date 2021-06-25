@@ -298,7 +298,7 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
                             violated_exit = variable_name.split("[")[1]
                             violated_exit = violated_exit.split("]")[0]
                             # mark violations via appendix to set
-                            episode_pressure_violations.add(violated_exit)
+                            episode_pressure_violations.append(violated_exit)
 
         # reward calculation between [-1, 1]
         # each flow violation has an impact of max 1/n_entries and is dependent
