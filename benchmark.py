@@ -27,6 +27,10 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
     high_init_flow = init_states[-1]["q_out"][high_entry]
 
     time_offset = simulation_steps*(-2)
+    # force numpy to round 0.5 down
+    numpy_offset = 0
+    if rounded_decimal is not None:
+        numpy_offset = -10**(-rounded_decimal - 2)
 
     with open(path.join(data_path, 'init_decisions.yml')) as init_file:
         init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
@@ -86,6 +90,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
         compressor_gas = float(compressor_case)
         compressor_values = compressor_start_values
         resistor_values = resistor_start_values + [65]
+        current_decisions = {}
 
         # calculate the optimal compressor/resistor efficiency
         while searching_decision:
@@ -98,10 +103,10 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
             # write the decision into init_decisions
             init_decisions["zeta"]["RE"][resistor][time_index] = \
                 resistor_value
-            init_decisions["gas"]["CS"][compressor][time_index] = \
-                compressor_gas
             init_decisions["compressor"]["CS"][compressor][time_index] = \
                 compressor_switch
+            init_decisions["gas"]["CS"][compressor][time_index] = \
+                compressor_gas
 
             low_avg_flow = 0
             # simulator_step.counter = 0
@@ -120,16 +125,49 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
             else:
                 search_values = resistor_values
 
+            # safe the current decisions dependent on the value of interest
+            current_decisions[np.abs(low_avg_flow - low_entry_nom)] = [
+                resistor_value,
+                compressor_switch,
+                compressor_gas
+            ]
+
             # control the search value in dependence of the avg flow
             if np.abs(low_avg_flow - low_entry_nom) <= 1.0:
                 iterations = max_iterations
-                decisions["zeta"].append(resistor_value)
-                decisions["compressor"].append(compressor_switch)
-                decisions["gas"].append(compressor_gas)
+                # decisions["zeta"].append(resistor_value)
+                # decisions["compressor"].append(compressor_switch)
+                # decisions["gas"].append(compressor_gas)
             elif low_avg_flow < low_entry_nom:
                 # make a bisection to the upper bound
                 new_value = search_values[2] + \
                             (search_values[1] - search_values[2])/2
+                # if rounding is desired, do so and check for useless loops
+                if rounded_decimal is not None:
+                    if compressor_case:
+                        new_value = np.round(new_value + numpy_offset,
+                                             rounded_decimal)
+                    else:
+                        new_value = np.round(new_value + numpy_offset,
+                                             rounded_decimal - 2)
+
+                    # numpy rounds downwards -> check for same value and
+                    # equality to upper bound. If not -> test upper bound
+                    if new_value == search_values[0]:
+                        try:
+                            last_decision = list(
+                                current_decisions.values()
+                            )[-1]
+                        except KeyError:
+                            last_decision = []
+                        if new_value in last_decision:
+                            iterations = max_iterations
+                    elif new_value == search_values[2]:
+                        if new_value != search_values[1]:
+                            new_value = search_values[1]
+                        else:
+                            iterations = max_iterations
+
                 search_values = [
                     search_values[2],
                     search_values[1],
@@ -138,6 +176,20 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
                 # make a bisection to the lower bound
                 new_value = search_values[0] + \
                             (search_values[2] - search_values[0])/2
+                # if rounding is desired, do so and check for useless loops
+                if rounded_decimal is not None:
+                    if compressor_case:
+                        new_value = np.round(new_value + numpy_offset,
+                                             rounded_decimal)
+                    else:
+                        new_value = np.round(new_value + numpy_offset,
+                                             rounded_decimal - 2)
+
+                    # terminate if no change in search values
+                    if new_value == search_values[2] or\
+                       new_value == search_values[1]:
+                        iterations = max_iterations
+
                 search_values = [
                     search_values[0],
                     search_values[2],
@@ -146,25 +198,8 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
 
             if compressor_case:
                 compressor_values = search_values
-                # rounding needed -> check new interval bounds for equality
-                if rounded_decimal is not None:
-                    value1 = np.round(compressor_values[0], rounded_decimal)
-                    value2 = np.round(compressor_values[1], rounded_decimal)
-                    if value1 == value2:
-                        compressor_gas = value1
-                        # cancel search with that criterion
-                        iterations = max_iterations
             else:
                 resistor_values = search_values
-                # rounding needed -> check new interval bounds for equality
-                if rounded_decimal is not None:
-                    # rounding required two places to the left, thus -2
-                    value1 = np.round(resistor_values[0], rounded_decimal - 2)
-                    value2 = np.round(resistor_values[1], rounded_decimal - 2)
-                    if value1 == value2:
-                        resistor_value = value1
-                        # ancel search with that criterion
-                        iterations = max_iterations
 
             iterations += 1
             searching_decision = iterations < max_iterations
@@ -180,9 +215,11 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
                     searching_decision = True
 
         if len(decisions["zeta"]) <= episode:
-            decisions["zeta"].append(resistor_value)
-            decisions["compressor"].append(compressor_switch)
-            decisions["gas"].append(compressor_gas)
+            best_objective_value = min(current_decisions.keys())
+            best_current_decision = current_decisions[best_objective_value]
+            decisions["zeta"].append(best_current_decision[0])
+            decisions["compressor"].append(best_current_decision[1])
+            decisions["gas"].append(best_current_decision[2])
 
     return decisions, init_decisions
 
