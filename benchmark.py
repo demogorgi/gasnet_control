@@ -18,7 +18,7 @@ def get_decision(decisions, time_step):
 
 
 def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
-                  rounded_decimal=None):
+                  rounded_decimal=None, enable_idle_compressor=True):
     init_states = funcs.get_init_scenario()
 
     low_entry = co.special[1]
@@ -204,15 +204,16 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
             iterations += 1
             searching_decision = iterations < max_iterations
 
-            if not searching_decision:
-                if compressor_case \
-                        and low_avg_flow - low_entry_nom > 5.0 \
-                        and compressor_gas < 0.01:
-                    compressor_case = False
-                    compressor_gas = 0.0
-                    compressor_switch = 1
-                    iterations = 0
-                    searching_decision = True
+            if enable_idle_compressor:
+                if not searching_decision:
+                    if compressor_case \
+                            and low_avg_flow - low_entry_nom > 5.0 \
+                            and compressor_gas < 0.01:
+                        compressor_case = False
+                        compressor_gas = 0.0
+                        compressor_switch = 1
+                        iterations = 0
+                        searching_decision = True
 
         if len(decisions["zeta"]) <= episode:
             best_objective_value = min(current_decisions.keys())
