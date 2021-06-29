@@ -113,7 +113,7 @@ if __name__ == '__main__':
                         if run >= 0:
                             bashfile_content = bashfile_content.replace(
                                 "[no. run]",
-                                run)
+                                str(run))
 
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
