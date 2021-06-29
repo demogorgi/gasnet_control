@@ -1,14 +1,22 @@
 import os
+import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
                 'dqn_template_200k.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
-update_steps = [20, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
+update_steps = [20] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
 epsilons = [1]#[0.5, 0.25, 0.1, 0.05]
-gradient_clippings = ['None', 1.0] #['None', 1.0, 10.0]
+gradient_clippings = ['None'] #, 1.0] #['None', 1.0, 10.0]
 learning_rates = [1e-2] #[1e-3, 1e-4, 1e-5, 1e-6]
-layers = [(50,), (100,), (250,)]
+layers = [(250,)] #[(50,), (100,), (250,)]
 epsilon_decay = True #False
+if len(sys.argv) > 1:
+    run = int(sys.argv[1])
+else:
+    run = -1
+
+if run >= 0:
+    template_path = template_path.replace(".sh", "_valrun.sh")
 
 if __name__ == '__main__':
     drop_path = destination_path + "scripts_20210622/"
@@ -102,6 +110,10 @@ if __name__ == '__main__':
                         bashfile_content = bashfile_content.replace(
                             "[gradient_desc]",
                             'None' if clip == 'None' else str(int(clip)))
+                        if run >= 0:
+                            bashfile_content = bashfile_content.replace(
+                                "[no. run]",
+                                run)
 
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
@@ -113,7 +125,10 @@ if __name__ == '__main__':
                         else:
                             bashfile_name += f"clip{str(int(clip))}"
                         bashfile_name += f"_200k"
+                        if run >= 0:
+                            bashfile_name += f"_run{run}"
                         bashfile_name += f".sh"
 
                         with open(epsilon_path + bashfile_name, 'w+') as bfile:
                             bfile.write(bashfile_content)
+                        print(f"Written {epsilon_path + bashfile_name}")
