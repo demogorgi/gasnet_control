@@ -77,6 +77,11 @@ if len(sys.argv) > 9:
 else:
     decaying_epsilon = False
 
+if len(sys.argv) > 10:
+    no_run = int(sys.argv[10])
+else:
+    no_run = -1
+
 
 in_num_iterations_options = [200000]#[5000, 20000, 50000]
 in_end_epsilons = [0.01]
@@ -346,7 +351,8 @@ def dqn_agent_training(
     else:
         file_spec += f"boltzmann{boltzmann_temperatur}"
 
-
+    if no_run >= 0:
+        file_spec += f"_run{no_run}"
 
     # initialize the necessary variables for saving the policy for later use
     policy_name = f"policy_" + file_spec
