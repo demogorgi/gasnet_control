@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 for epsilon in epsilons:
                     epsilon_string = f"epsilon{str(epsilon).replace('.', '')}"
                     if epsilon_decay:
-                        epsilon_string += "to01"
+                        epsilon_string += "to001"
                     epsilon_path = net_path + epsilon_string + "/"
                     try:
                         os.makedirs(epsilon_path)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         if epsilon_decay:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
-                                "to01")
+                                "to001")
                         else:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
-                        bashfile_name += f"{'to01' if epsilon_decay else ''}"
+                        bashfile_name += f"{'to001' if epsilon_decay else ''}"
                         bashfile_name += f"_rate"
                         bashfile_name += '{:.0e}'.format(rate).replace('0', '')
                         if clip == 'None':
