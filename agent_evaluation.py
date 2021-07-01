@@ -15,12 +15,12 @@ simulations_per_agent_step = 8
 # import the policy accomplished through training
 temp_dir = os.getcwd() + '/instances'
 policy_dir = os.path.join(temp_dir, "policy_" +\
-                          f"(250,)realQ_"
-                          f"iters{200}_" +\
+                          f"cdqn_(50,)realQ_"
+                          f"iters{100}_" +\
                           f"rate1e-2_" +\
                           f"clip{'None'}_" +\
-                          f"update{20}_" +\
-                          f"epsilondecay10to001")
+                          f"update{1}_" +\
+                          f"epsilon01_run1")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
