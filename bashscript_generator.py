@@ -2,14 +2,14 @@ import os
 import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
-                'dqn_template_200k.sh'
+                'cdqn_template.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
-update_steps = [20] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
-epsilons = [1]#[0.5, 0.25, 0.1, 0.05]
-gradient_clippings = ['None'] #, 1.0] #['None', 1.0, 10.0]
-learning_rates = [1e-2] #[1e-3, 1e-4, 1e-5, 1e-6]
-layers = [(250,)] #[(50,), (100,), (250,)]
-epsilon_decay = True #False
+update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
+epsilons = [0.5, 0.25, 0.1, 0.05]#[0.5, 0.25, 0.1, 0.05]
+gradient_clippings = ['None', 1.0] #, 1.0] #['None', 1.0, 10.0]
+learning_rates = [1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
+layers = [(50,), (100,), (250,)]
+epsilon_decay = False
 if len(sys.argv) > 1:
     run = int(sys.argv[1])
 else:
@@ -19,7 +19,11 @@ if run >= 0:
     template_path = template_path.replace(".sh", "_valrun.sh")
 
 if __name__ == '__main__':
-    drop_path = destination_path + "scripts_20210622/"
+    if 'cdqn' in template_path:
+        use_cdqn = True
+    else:
+        use_cdqn = False
+    drop_path = destination_path + "cdqn_scripts_20210701/"
     try:
         os.makedirs(drop_path)
     except FileExistsError:
@@ -124,11 +128,15 @@ if __name__ == '__main__':
                             bashfile_name += f"clipNone"
                         else:
                             bashfile_name += f"clip{str(int(clip))}"
-                        bashfile_name += f"_200k"
+                        #bashfile_name += f"_200k"
                         if run >= 0:
                             bashfile_name += f"_run{run}"
                         bashfile_name += f".sh"
 
+                        if use_cdqn:
+                            bashfile_name = bashfile_name.replace(
+                                'dqn', 'cdqn'
+                            )
                         with open(epsilon_path + bashfile_name, 'w+') as bfile:
                             bfile.write(bashfile_content)
                         print(f"Written {epsilon_path + bashfile_name}")
