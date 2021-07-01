@@ -157,7 +157,8 @@ def dqn_agent_training(
                       convert_action=convert_action,
                       steps_per_agent_step=steps_per_agent_step,
                       max_agent_steps=max_agent_steps,
-                      random_nominations=random_entry_nominations)
+                      random_nominations=random_entry_nominations,
+                      print_actions=True)
     env.reset()
     if not on_cluster:
         print('Observation Spec:')
@@ -175,14 +176,14 @@ def dqn_agent_training(
         print('Time step:')
         print(time_step0)
 
-    action = np.array(35, dtype=np.int32)
+    action = np.array(409, dtype=np.int32)
 
-    if on_cluster:
+    if not on_cluster:
         next_time_step0 = env.step(action)
 
     #print("first environment creation worked")
 
-    if on_cluster:
+    if not on_cluster:
         print('Next time step:')
         print(next_time_step0)
 
