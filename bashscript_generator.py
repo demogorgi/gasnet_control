@@ -2,14 +2,14 @@ import os
 import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
-                'cdqn_template_200k.sh'
+                'cdqn_template.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
 update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
-epsilons = [0.5, 0.25, 0.1, 0.05]#[0.5, 0.25, 0.1, 0.05]
-gradient_clippings = ['None'] #, 1.0] #, 1.0] #['None', 1.0, 10.0]
-learning_rates = [1e-3]#[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
+epsilons = [1, 0.5, 0.25, 0.1] #[0.5, 0.25, 0.1, 0.05]
+gradient_clippings = ['None', 1] #, 1.0] #, 1.0] #['None', 1.0, 10.0]
+learning_rates = [1e-4] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
 layers = [(50,), (100,), (250,)]
-epsilon_decay = False
+epsilon_decay = True
 if len(sys.argv) > 1:
     run = int(sys.argv[1])
 else:
@@ -128,7 +128,8 @@ if __name__ == '__main__':
                             bashfile_name += f"clipNone"
                         else:
                             bashfile_name += f"clip{str(int(clip))}"
-                        bashfile_name += f"_200k"
+                        if '200k' in template_path:
+                            bashfile_name += f"_200k"
                         if run >= 0:
                             bashfile_name += f"_run{run}"
                         bashfile_name += f".sh"
