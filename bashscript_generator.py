@@ -7,9 +7,10 @@ destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
 update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
 epsilons = [1, 0.5, 0.25, 0.1] #[0.5, 0.25, 0.1, 0.05]
 gradient_clippings = ['None', 1] #, 1.0] #, 1.0] #['None', 1.0, 10.0]
-learning_rates = [1e-4] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
+learning_rates = [1e-3] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
 layers = [(50,), (100,), (250,)]
 epsilon_decay = True
+end_epsilon = 0.01
 if len(sys.argv) > 1:
     run = int(sys.argv[1])
 else:
@@ -65,8 +66,12 @@ if __name__ == '__main__':
 
                 for epsilon in epsilons:
                     epsilon_string = f"epsilon{str(epsilon).replace('.', '')}"
+                    epsilon_decay_string = ""
                     if epsilon_decay:
-                        epsilon_string += "to001"
+                        epsilon_decay_string = "to"
+                        epsilon_decay_string += str(end_epsilon).replace(
+                            '.', '')
+                        epsilon_string += epsilon_decay_string
                     epsilon_path = net_path + epsilon_string + "/"
                     try:
                         os.makedirs(epsilon_path)
@@ -98,12 +103,15 @@ if __name__ == '__main__':
                             "[eps_decay]",
                             "T" if epsilon_decay else "F")
                         bashfile_content = bashfile_content.replace(
+                            "[end_eps]",
+                            str(end_epsilon))
+                        bashfile_content = bashfile_content.replace(
                             "[start_eps_desc]",
                             str(epsilon).replace(".", ""))
                         if epsilon_decay:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
-                                "to001")
+                                epsilon_decay_string)
                         else:
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
@@ -121,7 +129,7 @@ if __name__ == '__main__':
 
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
-                        bashfile_name += f"{'to001' if epsilon_decay else ''}"
+                        bashfile_name += f"{epsilon_decay_string}"
                         bashfile_name += f"_rate"
                         bashfile_name += '{:.0e}'.format(rate).replace('0', '')
                         if clip == 'None':
