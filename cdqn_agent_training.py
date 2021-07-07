@@ -76,13 +76,17 @@ else:
     decaying_epsilon = False
 
 if len(sys.argv) > 10:
-    no_run = int(sys.argv[10])
+    in_end_epsilons = [float(sys.argv[10])]
+else:
+    in_end_epsilons = [0.001]
+
+if len(sys.argv) > 11:
+    no_run = int(sys.argv[11])
 else:
     no_run = -1
 
 
 in_num_iterations_options = [100000]#[5000, 20000, 50000]
-in_end_epsilons = [0.01]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
