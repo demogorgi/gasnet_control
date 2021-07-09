@@ -47,9 +47,19 @@ else:
     in_gradient_clippings = [None]  # dont forget None value
 
 if len(sys.argv) > 7:
-    in_learning_rates = [float(sys.argv[7])]
+    if 'to' in sys.argv[7]:
+        in_out_rates = sys.argv[7].split('to')
+        in_learning_rates = [float(in_out_rates[0])]
+        in_end_learning_rate = float(in_out_rates[1])
+        learning_rate_decay = True
+    else:
+        in_learning_rates = [float(sys.argv[7])]
+        in_end_learning_rate = 1e-5
+        learning_rate_decay = False
 else:
     in_learning_rates = [1e-2]
+    in_end_learning_rate = 1e-5
+    learning_rate_decay = False
 
 if len(sys.argv) > 8:
     layers = sys.argv[8].split("-")
@@ -94,6 +104,7 @@ in_boltzmann_temperatures = []
 def cdqn_agent_training(
         in_num_iterations=20000,
         in_learning_rate=1e-5,
+        in_end_learning_rate=1e-5,
         in_start_epsilon=0.1,
         in_end_epsilon=1e-4,
         in_use_epsilon=False,
@@ -108,8 +119,19 @@ def cdqn_agent_training(
     collect_steps_per_iteration = 1  # @param {type:"integer"}
     replay_buffer_max_length = 100000  # @param {type:"integer"}
 
+    global_step = tf.compat.v1.train.get_or_create_global_step()
+
     batch_size = 64  # @param {type:"integer"}
-    learning_rate = in_learning_rate  # @param {type:"number"}
+    # if required define a decaying learning rate
+    if learning_rate_decay:
+        learning_rate = tf.compat.v1.train.polynomial_decay(
+            learning_rate=in_learning_rate,
+            global_step=global_step,
+            decay_steps=in_num_iterations,
+            end_learning_rate=in_end_learning_rate
+        )
+    else:
+        learning_rate = in_learning_rate  # @param {type:"number"}
     log_interval = 200  # @param {type:"integer"}
 
     num_eval_episodes = 10  # @param {type:"integer"}
@@ -122,7 +144,6 @@ def cdqn_agent_training(
     n_step_update = 2
 
     # define a decaying epsilon over time, a boltzmann and which to use
-    global_step = tf.compat.v1.train.get_or_create_global_step()
     start_epsilon = in_start_epsilon
     end_epsilon = in_end_epsilon
     if decaying_epsilon:
@@ -282,7 +303,11 @@ def cdqn_agent_training(
     # define the file name specificities
     file_spec = f"cdqn_{fc_layer_param}realQ_" +\
                 f"iters{int(num_iterations/1000)}_" +\
-                f"rate{'{:.0e}'.format(learning_rate).replace('0', '')}_"
+                f"rate{'{:.0e}'.format(in_learning_rate).replace('0', '')}"
+    if learning_rate_decay:
+        file_spec += f"to{in_end_learning_rate}_"
+    else:
+        file_spec += "_"
     if gradient_clipping is not None:
         file_spec += f"clip{int(gradient_clipping)}_"
     else:
@@ -408,6 +433,7 @@ for iterations in in_num_iterations_options:
                     cdqn_agent_training(
                         in_num_iterations=iterations,
                         in_learning_rate=rate,
+                        in_end_learning_rate=in_end_learning_rate,
                         in_start_epsilon=in_start_epsilon,
                         in_end_epsilon=eps,
                         in_use_epsilon=True,
