@@ -2,15 +2,17 @@ import os
 import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
-                'cdqn_template.sh'
+                'cdqn_template_200k.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
 update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
 epsilons = [1, 0.5, 0.25, 0.1] #[0.5, 0.25, 0.1, 0.05]
 gradient_clippings = ['None', 1] #, 1.0] #, 1.0] #['None', 1.0, 10.0]
-learning_rates = [1e-3] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
+learning_rates = [1e-2] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
 layers = [(50,), (100,), (250,)]
 epsilon_decay = True
-end_epsilon = 0.01
+end_epsilon = 0.001
+learning_rate_decay = True
+end_learning_rate = 1e-5
 if len(sys.argv) > 1:
     run = int(sys.argv[1])
 else:
@@ -36,6 +38,9 @@ if __name__ == '__main__':
     for rate in learning_rates:
         rate_string = "rate"
         rate_string += '{:.0e}'.format(rate).replace('0', '')
+        if learning_rate_decay:
+            rate_string += "to"
+            rate_string += '{:.0e}'.format(end_learning_rate).replace('0', '')
         rate_path = drop_path + rate_string + "/"
         try:
             os.makedirs(rate_path)
@@ -89,9 +94,14 @@ if __name__ == '__main__':
                         bashfile_content = bashfile_content.replace(
                             "[gradient]",
                             str(clip))
-                        bashfile_content = bashfile_content.replace(
-                            "[lr]",
-                            str(rate))
+                        if learning_rate_decay:
+                            bashfile_content = bashfile_content.replace(
+                                "[lr]",
+                                rate_string.replace('rate', ""))
+                        else:
+                            bashfile_content = bashfile_content.replace(
+                                "[lr]",
+                                str(rate))
                         layer_string = ""
                         for layer in net:
                             layer_string += str(layer) + "-"
@@ -116,9 +126,14 @@ if __name__ == '__main__':
                             bashfile_content = bashfile_content.replace(
                                 "[eps_decay_desc]",
                                 "")
-                        bashfile_content = bashfile_content.replace(
-                            "[lr_desc]",
-                            "{:.0e}".format(rate).replace('0', ''))
+                        if learning_rate_decay:
+                            bashfile_content = bashfile_content.replace(
+                                "[lr_desc]",
+                                rate_string.replace('rate', ""))
+                        else:
+                            bashfile_content = bashfile_content.replace(
+                                "[lr_desc]",
+                                "{:.0e}".format(rate).replace('0', ''))
                         bashfile_content = bashfile_content.replace(
                             "[gradient_desc]",
                             'None' if clip == 'None' else str(int(clip)))
@@ -130,8 +145,13 @@ if __name__ == '__main__':
                         bashfile_name = f"dqn_net{layer_string}_{steps}updates"
                         bashfile_name += f"_{str(epsilon).replace('.', '')}eps"
                         bashfile_name += f"{epsilon_decay_string}"
-                        bashfile_name += f"_rate"
-                        bashfile_name += '{:.0e}'.format(rate).replace('0', '')
+
+                        if learning_rate_decay:
+                            bashfile_name += "_" + rate_string
+                        else:
+                            bashfile_name += f"_rate"
+                            bashfile_name += '{:.0e}'.format(rate).replace(
+                                '0', '')
                         if clip == 'None':
                             bashfile_name += f"clipNone"
                         else:
