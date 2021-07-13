@@ -1,0 +1,49 @@
+# this file contains the compressor specifications
+
+"A15^A14":
+   # value of L_MAX at 0
+   pi_MAX : 6
+   # value of L_MIN at 0
+   pi_MIN: 2.5
+   # argument phi with L_MIN(phi) = 0
+   phi_MIN: 2.5
+   # p_in_min in bar
+   p_in_min: 30
+   # p_in_max in bar
+   p_in_max: 85
+   # phi_min in m³/s
+   phi_min: 1.1
+   # phi_max in m³/s
+   phi_max: 4.3
+   # pi_min
+   pi_min: 1
+   # pi_1
+   pi_1: 1.6
+   # pi_2
+   pi_2: 3.6
+   # eta
+   eta: 0.90
+
+"A2^A3":
+   # value of L_MAX at 0
+   pi_MAX : 6
+   # value of L_MIN at 0
+   pi_MIN: 2.5
+   # argument phi with L_MIN(phi) = 0
+   phi_MIN: 2.5
+   # p_in_min in bar
+   p_in_min: 30
+   # p_in_max in bar
+   p_in_max: 85
+   # phi_min in m³/s
+   phi_min: 1.1
+   # phi_max in m³/s
+   phi_max: 4.3
+   # pi_min
+   pi_min: 1
+   # pi_1
+   pi_1: 1.6
+   # pi_2
+   pi_2: 3.6
+   # eta
+   eta: 0.90

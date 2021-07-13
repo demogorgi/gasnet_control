@@ -50,16 +50,13 @@ def setNodePressures(stateXml, pressures)
 	end
 end
 
-def mean(a,b)
-	return (a+b)/2.0
-end
-
 def getPipeFlow(solutionfile)
 	flow = {}
 	File.readlines(solutionfile).each do |line|
 	        data = line.match(/var_pipe_Qo_(out|in)\[([^\s]*)\]\s*(.*)/)
 		if !data.nil?
-			flow[data[2].sub(",","^")] = data[3].to_f.round(3).to_s
+			flow[data[2].sub(",","^")] ||= 0
+			flow[data[2].sub(",","^")] += data[3].to_f.round(3) / 2
 		end
 	end
 	flow

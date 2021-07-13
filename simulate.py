@@ -3,7 +3,7 @@
 
 # this file manages the iterative process
 # it works for example with python3, gurobi 8.0.1, yaml 5.3
-# >python3 main.py path numIterations lengthTimestep
+# >python3 simulate.py path numIterations lengthTimestep
 
 from urmel import *
 import pprint
@@ -21,7 +21,6 @@ with open(path.join(data_path, 'init_decisions.yml')) as file:
     agent_decisions = yaml.load(file, Loader=yaml.FullLoader)
     print(agent_decisions)
 
-simulator_step.counter = 0
 for i in range(numSteps):
     print("\nstep %d" % i)
 

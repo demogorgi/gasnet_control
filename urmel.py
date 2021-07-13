@@ -20,32 +20,45 @@ if os.path.exists(output):
 if not os.path.exists(output):
     os.makedirs(output)
 
+
 def simulator_step(agent_decisions, step, process_type):
 
-    simulator_step.counter += 1
-    print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
+    if hasattr(simulator_step, 'counter'):
+        simulator_step.counter += 1
+    else:
+        simulator_step.counter = 0
+    if config['urmel_console_output']:
+        print("timestep %d overall simulator steps %d" % (step,simulator_step.counter))
     # m ist the simulator model with agent decisisons, compressor specs and timestep length incorporated
     m = simulate(agent_decisions, compressors, step, dt)
     # control output
     m.params.logToConsole = config['grb_console']
     m.params.logfile = config['grb_logfile']
+    # tuned parameters
+    m.params.heuristics = 0
+    m.params.cuts = 0
+    # generate often used strings
+    _step = "_" + str(step).rjust(5, "0")
+    if config["debug"]:
+        _step += "_" + str(simulator_step.counter).rjust(5, "0")
+    step_files_path = "".join([output, "/", config["name"], _step]).replace("\\", "/")
+    # the next part can be used to tune model. tuned parameters are set a few lines above below "# tuned parameters"
+    #m.tune()
+    #for i in range(m.tuneResultCount):
+    #    m.getTuneResult(i)
+    #    m.write(step_files_path + '_tune' + str(i) + '.prm')
     # optimize the model ( = do a simulation step)
     m.optimize()
     # get the model status
     status = m.status
-    # generate often used strings
-    _step = "_" + str(step).rjust(5, "0")
-    if config["ai"]:
-        _step += "_" + str(simulator_step.counter).rjust(5, "0")
-    step_files_path = "".join([output, "/", config["name"], _step]).replace("\\", "/")
     # if solved to optimallity
     if config['urmel_console_output']:
         print ("model status: ", status)
     if status == GRB.OPTIMAL: # == 2
         # plot data with gnuplot
         if config['gnuplot'] and ( process_type == "sim" or config["debug"] ):
-            if compressors:
-                os.system(plot(step, _step, agent_decisions, compressors, output))
+             if compressors:
+                 os.system(plot(step, _step, agent_decisions, compressors, output))
         if config['write_lp'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".lp")
         if config['write_sol'] and ( process_type == "sim" or config["debug"] ): m.write(step_files_path + ".sol")
         # store solution in dictionary
@@ -63,6 +76,16 @@ def simulator_step(agent_decisions, step, process_type):
         for pipe in co.pipes:
             states[step]['q_in'][pipe] = sol["var_pipe_Qo_in[%s,%s]" % pipe]
             states[step]['q_out'][pipe] = sol["var_pipe_Qo_out[%s,%s]" % pipe]
+        ############## short test begin
+        if False:
+            #for pipe in co.special:
+            #    if 'N' in pipe[0]:
+            #        simulator_step.pipe_value += sol['var_pipe_Qo_out[%s,%s]' % pipe]
+            for key in sol:
+                if key.startswith("nom_entry_slack_DA"):
+                    print(f"{key} value: {sol[key]}")
+            #print(f"{pipe} has value {simulator_step.pipe_value/8}")
+        ############## short test end
         ###############
         ### the following can be used to generate a new initial state.
         ###############
@@ -93,7 +116,13 @@ def simulator_step(agent_decisions, step, process_type):
         else:
             if config['urmel_console_output']:
                 print("Model is infeasible.")
+
+        # return statement if no solution
+        return
     # don't know yet, what else
     else:
         if config['urmel_console_output']:
             print("Solution status is %d, don't know what to do." % status)
+
+        # return statement if no solution
+        return None

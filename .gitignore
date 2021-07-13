@@ -1,4 +1,13 @@
 instances/*/output
 instances/*/__pycache__
+instances/*/benchmark_decisions.yml
+instances/*/new_init_scenario.yml
+instances/*/config.yml
 *~
 *.swp
+instances/policy*
+instances/timestep8s/
+gurobi.log
+dat
+__pycache__/
+rewardfile.csv
