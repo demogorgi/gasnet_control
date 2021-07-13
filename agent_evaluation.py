@@ -18,9 +18,9 @@ policy_dir = os.path.join(temp_dir, "policy_" +\
                           f"cdqn_(50,)realQ_"
                           f"iters{100}_" +\
                           f"rate1e-2_" +\
-                          f"clip{'None'}_" +\
-                          f"update{1}_" +\
-                          f"epsilon01_run1")
+                          f"clip{1}_" +\
+                          f"update{500}_" +\
+                          f"epsilon025")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
