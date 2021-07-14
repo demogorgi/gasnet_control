@@ -52,20 +52,18 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._resistors = list(init_decisions["zeta"]["RE"].keys())
         self._compressors = list(init_decisions["compressor"]["CS"].keys())
 
-        n_valves = len(self._valves)
         n_resistors = len(self._resistors)
         n_compressors = len(self._compressors)
-        n_control_vars = n_valves + n_resistors + n_compressors
+        n_control_vars = n_resistors + n_compressors
 
-        # overall minimum set to 0, maxima are 1 for valves and the
-        # discretization step size for others
+        # overall minimum set to 0, maxima are the discretization step size for
+        # others
         self._discretization = discretization_steps
         control_minima = [0]*n_control_vars
-        valve_maxima = [1]*n_valves
         # upper resistor bounds [0, discretization] (in reality, [0, 100])
         resistor_maxima = [discretization_steps]*n_resistors
         compressor_maxima = [discretization_steps]*n_compressors
-        control_maxima = valve_maxima + resistor_maxima + compressor_maxima
+        control_maxima = resistor_maxima + compressor_maxima
 
         # define the actual action spec
         if convert_action:
@@ -232,7 +230,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # counter to come to an end
         self._action_counter = 0
         # set simulation_step counter in urmel to 0
-        #simulator_step.counter = 0
 
     def action_spec(self):
         return self._action_spec
@@ -321,7 +318,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # is restarted
             return self.reset()
 
-        #print(f"performing an agent step number {self._action_counter}")
         ### simulate one step
         big_step = self._action_counter
         # convert the action vector such that urmel can use it
@@ -372,19 +368,19 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
-            # apply the actions; first valves, then resistors, then compressors
+            # apply the actions; first fix valves to 1 ( = open)
+            # then apply the resistors, then compressors
+            for valve_counter in range(n_valves):
+                valve = self._valves[valve_counter]
+                agent_decisions["va"]["VA"][valve][step] = 1
             for action_counter, action in enumerate(action_list):
-                if action_counter < n_valves:
-                    # valves can only be 0 or 1
-                    valve = self._valves[action_counter]
-                    agent_decisions["va"]["VA"][valve][step] = action
-                elif action_counter < n_valves + n_resistors:
+                if action_counter < n_resistors:
                     # resistor action has to be converted to discrete [0, 100]
-                    resistor = self._resistors[action_counter - n_valves]
+                    resistor = self._resistors[action_counter]
                     resis_value = 100/self._discretization * action
                     agent_decisions["zeta"]["RE"][resistor][step] = resis_value
                 else:
-                    compressor_index = action_counter - n_valves - n_resistors
+                    compressor_index = action_counter - n_resistors
                     compressor = self._compressors[compressor_index]
                     if action > 10e-3:
                         activation = 1
@@ -400,19 +396,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             if self._print_actions:
                 if step % self._steps_per_agent_steps == 0:
                     for action_counter, action in enumerate(action_list):
-                        if action_counter < n_valves:
-                            valve = self._valves[action_counter]
-                            print(f"valve {valve} is "
-                                  f"{'' if action == 1 else 'not '}activated")
-                        elif action_counter < n_valves + n_resistors:
-                            resistor = self._resistors[
-                                action_counter - n_valves]
+                        if action_counter < n_resistors:
+                            resistor = self._resistors[action_counter]
                             resis_value = 100 / self._discretization * action
                             print(f"resistor {resistor} works at efficiency"
                                   f" of {resis_value}")
                         else:
-                            compressor_index = action_counter - \
-                                               n_valves - n_resistors
+                            compressor_index = action_counter - n_resistors
                             compressor = self._compressors[compressor_index]
                             if action > 10e-3:
                                 activation = 1
@@ -431,30 +421,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # agent step
             if solution is None:
                 agent_step_reward = -1
-                step_reward = 0
                 self._episode_ended = True
             # otherwise we calculate the reward as 1 - the weighted violations
             # divided by the amount of simulation steps per agent step
             else:
-                # if nothing is violated, we reward 1 for the simulation step
-                step_reward = 1.0
-
-                # one can weigh the impact of exit to entry violations
-                # ratio of 10 means an exit violation has 10 times more
-                # percentage impact than an entry violation of the same perc.
-                exit_entry_impact_ratio = 2
-
                 # for norming the violations with their upper bound
                 ub_entry_violation = np.abs(int(np.sum(
                     current_entry_nominations
                 )))
-                ub_exit_violation = 430
-
-                # define the resulting multipliers (see thesis)
-                entry_multiplier = 1 / (n_entries +
-                                        exit_entry_impact_ratio * n_exits)
-                exit_multiplier = 1 / (n_entries / exit_entry_impact_ratio +
-                                       n_exits)
 
                 # iterate through variables to identify entries and exits
                 for variable_name in solution.keys():
@@ -496,7 +470,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 1.0
                 )/n_entries
 
-        # a pressure violation is rated is critical -> if n = amount exits
+        # a pressure violation is rated as critical -> if n = amount exits
         # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
         n_press_viol = len(pressure_violations)
         pressure_violation = np.sum([2**(n_press_viol - i - 1) /
