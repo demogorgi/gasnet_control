@@ -28,6 +28,8 @@ from urmel import *
 from model import *
 import functions as funcs
 from params import *
+obs_no = importlib.import_module(wd + ".observable_nodes")
+obs_co = importlib.import_module(wd + ".observable_connections")
 
 
 class GasNetworkEnv(py_environment.PyEnvironment):
@@ -96,34 +98,33 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             )
         ### define the observations specificities
         ## extract the nominations
-        entries_exits_list = no.nodes_with_bds
-        entries_exits_minima = [no.q_lb[node] for node in no.nodes_with_bds]
-        entries_exits_maxima = [no.q_ub[node] for node in no.nodes_with_bds]
+        entries_exits_list = obs_no.nodes_with_bds
+        entries_exits_minima = [obs_no.q_lb[node]
+                                for node in obs_no.nodes_with_bds]
+        entries_exits_maxima = [obs_no.q_ub[node]
+                                for node in obs_no.nodes_with_bds]
         n_entries_exits = len(entries_exits_list)
 
         ## extract the network state specifities
         # get all nodes and pipes but exclude helper elements
         # all nodes in the relevant network
-        nodes_list = [node for node in no.nodes if node.startswith('N')]
+        nodes_list = list(obs_no.innodes)
         # entries and exits of the relevant network
-        nodes_list += no.nodes_with_bds
+        nodes_list += obs_no.nodes_with_bds
         # only (non-)pipes where one element starts with 'N' are observable
-        pipes_list = [pipe for pipe in co.pipes
-                      if pipe[0].startswith('N') or pipe[1].startswith('N')]
-        non_pipes_list = [non_pipe for non_pipe in co.non_pipes
-                          if non_pipe[0].startswith('N') or
-                          non_pipe[1].startswith('N')]
+        pipes_list = list(obs_co.pipes)
+        non_pipes_list = obs_co.non_pipes
 
         n_nodes = len(nodes_list)
         n_pipes = len(pipes_list)
         n_non_pipes = len(non_pipes_list)
 
         # extract the pressure ranges
-        node_pressure_minima = [no.pressure_limits_lower[node] for node in
+        node_pressure_minima = [obs_no.pressure_limits_lower[node] for node in
                                 nodes_list]
         # TODO: check why initial pressures are higher than upper bound
-        node_pressure_maxima = [no.pressure_limits_upper[node] + 3.0 for node in
-                                nodes_list]
+        node_pressure_maxima = [obs_no.pressure_limits_upper[node] + 3.0
+                                for node in nodes_list]
         # set the inflow ranges, TODO: ask if necessary and extract from file
         #node_inflow_minima = [-10000]*n_nodes
         #node_inflow_maxima = [10000]*n_nodes
