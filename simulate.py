@@ -25,10 +25,10 @@ for i in range(numSteps):
     print("\nstep %d" % i)
 
     # dirty hack to randomly generate nominations
-    if i > 0 and (i+1) % config['nomination_freq'] == 0 and (i+1) < numSteps:
-        a = random.randrange(*config["randrange"])
-        agent_decisions["entry_nom"]["S"]["EN_aux0^EN"][i+1] = a
-        agent_decisions["entry_nom"]["S"]["EH_aux0^EH"][i+1] = 1100 - a
+    #if i > 0 and (i+1) % config['nomination_freq'] == 0 and (i+1) < numSteps:
+    #    a = random.randrange(*config["randrange"])
+    #    agent_decisions["entry_nom"]["S"]["EN_aux0^EN"][i+1] = a
+    #    agent_decisions["entry_nom"]["S"]["EH_aux0^EH"][i+1] = 1100 - a
 
     # for every i in numSteps a simulator step is performed.
     # agent_decisions (init_decisions.yml in scenario folder for the first step) delivers the agents decisions to the simulator and can be modified for every step.
