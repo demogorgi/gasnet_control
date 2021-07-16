@@ -113,7 +113,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nodes_list += obs_no.nodes_with_bds
         # only (non-)pipes where one element starts with 'N' are observable
         pipes_list = list(obs_co.pipes)
-        non_pipes_list = obs_co.non_pipes
+        non_pipes_list = obs_co.obs_non_pipes
 
         n_nodes = len(nodes_list)
         n_pipes = len(pipes_list)
@@ -212,7 +212,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # initial values for non pipe elements
         init_states = funcs.get_init_scenario()
         node_pressures = [init_states[-1]["p"][node] for node in nodes_list]
-        pipe_inflows = [init_states[-1]["q_in"][pipe] for pipe in pipes_list]
+        pipe_inflows = [init_states[-1]["q_out"][pipe]
+                        if pipe[1].startswith("X")
+                        else init_states[-1]["q_in"][pipe]
+                        for pipe in pipes_list]
         non_pipe_values = [init_states[-1]["q"][non_pipe]
                            for non_pipe in non_pipes_list]
 
@@ -233,7 +236,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # counter to come to an end
         self._action_counter = 0
         # set simulation_step counter in urmel to 0
-        #simulator_step.counter = 0
 
     def action_spec(self):
         return self._action_spec
@@ -300,7 +302,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # initial values for non pipe elements
         init_states = funcs.get_init_scenario()
         node_pressures = [init_states[-1]["p"][node] for node in self._nodes]
-        pipe_inflows = [init_states[-1]["q_in"][pipe] for pipe in self._pipes]
+        pipe_inflows = [init_states[-1]["q_out"][pipe]
+                        if pipe[1].startswith("X")
+                        else init_states[-1]["q_in"][pipe]
+                        for pipe in self._pipes]
         non_pipe_values = [init_states[-1]["q"][non_pipe]
                            for non_pipe in self._non_pipes]
 
@@ -432,30 +437,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # agent step
             if solution is None:
                 agent_step_reward = -1
-                step_reward = 0
                 self._episode_ended = True
             # otherwise we calculate the reward as 1 - the weighted violations
             # divided by the amount of simulation steps per agent step
             else:
-                # if nothing is violated, we reward 1 for the simulation step
-                step_reward = 1.0
-
-                # one can weigh the impact of exit to entry violations
-                # ratio of 10 means an exit violation has 10 times more
-                # percentage impact than an entry violation of the same perc.
-                exit_entry_impact_ratio = 2
-
                 # for norming the violations with their upper bound
                 ub_entry_violation = np.abs(int(np.sum(
                     current_entry_nominations
                 )))
-                ub_exit_violation = 430
-
-                # define the resulting multipliers (see thesis)
-                entry_multiplier = 1 / (n_entries +
-                                        exit_entry_impact_ratio * n_exits)
-                exit_multiplier = 1 / (n_entries / exit_entry_impact_ratio +
-                                       n_exits)
 
                 # iterate through variables to identify entries and exits
                 for variable_name in solution.keys():
@@ -567,7 +556,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         else:
             node_pressures = [solution["var_node_p[%s]" % node]
                               for node in self._nodes]
-            pipe_inflows = [solution["var_pipe_Qo_in[%s,%s]" % pipe]
+            pipe_inflows = [solution["var_pipe_Qo_out[%s,%s]" % pipe]
+                            if pipe[1].startswith("X")
+                            else solution["var_pipe_Qo_in[%s,%s]" % pipe]
                             for pipe in self._pipes]
             non_pipe_values = [solution["var_non_pipe_Qo[%s,%s]" % non_pipe]
                                for non_pipe in self._non_pipes]
