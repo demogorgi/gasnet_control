@@ -2,13 +2,13 @@ import os
 import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
-                'cdqn_template_200k.sh'
+                'cdqn_template.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
 update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
 epsilons = [1, 0.5, 0.25, 0.1] #[0.5, 0.25, 0.1, 0.05]
 gradient_clippings = ['None', 1] #, 1.0] #, 1.0] #['None', 1.0, 10.0]
 learning_rates = [1e-2] #[1e-1, 1e-2, 1e-3] #[1e-3, 1e-4, 1e-5, 1e-6]
-layers = [(5, 20)]#[(50,), (100,), (250,)]
+layers = [(20,), (50,), (100,), (250,)]
 epsilon_decay = True
 end_epsilon = 0.001
 learning_rate_decay = True
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         use_cdqn = True
     else:
         use_cdqn = False
-    drop_path = destination_path + "cdqn_scripts_20210701/"
+    drop_path = destination_path + "cdqn_scripts_reducedinput/"
     try:
         os.makedirs(drop_path)
     except FileExistsError:
