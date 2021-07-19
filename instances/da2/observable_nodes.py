@@ -24,7 +24,7 @@ exits = ['XN', 'XH']
 
 # set up innodes
 innodes = [#'N23_1', 'N13', 'N14',
-           'N26',
+           #'N26',
            #'N17', 'N17_1', 'N11', 'N12', 'N20',
            #'N19', 'N18',
            'N25',
@@ -33,7 +33,8 @@ innodes = [#'N23_1', 'N13', 'N14',
            # 'EH_aux3', 'EH_HDin1', 'EH_HDin2', 'EN', 'EN_aux0', 'EN_aux1',
            # 'EN_NDin1', 'EN_NDin2', 'EN_aux2', 'EN_aux3', 'EN_HDin1',
            # 'EN_HDin2',
-           #'N26_aux', 'N22_aux', 'N23_aux',
+           'N26_aux',
+           # 'N22_aux', 'N23_aux',
            'N22']
 
 # set up nodes heights and pressure limits
