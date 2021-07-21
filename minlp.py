@@ -39,6 +39,10 @@ def simulate(agent_decisions,compressors,dt):
 
     #### From here on the variables have to be added. ####
     var_node_p = {}
+    var_boundary_node_flow_slack_positive = {}
+    var_boundary_node_flow_slack_negative = {}
+    var_boundary_node_pressure_slack_positive = {}
+    var_boundary_node_pressure_slack_negative = {}
     var_node_Qo_in = {}
     var_pipe_Qo_in = {}
     var_pipe_Qo_out = {}
@@ -52,13 +56,13 @@ def simulate(agent_decisions,compressors,dt):
         # pressure for every node
         var_node_p[tstep] = m.addVars(no.nodes, lb=1.01325, ub=501.01325, name=f"var_node_p_{tstep}")
         # flow slack variables for exits, with obj coefficient
-        var_boundary_node_flow_slack_positive = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_positive_{tstep}");
-        var_boundary_node_flow_slack_negative = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_negative_{tstep}");
+        var_boundary_node_flow_slack_positive[tstep] = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_positive_{tstep}");
+        var_boundary_node_flow_slack_negative[tstep] = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_negative_{tstep}");
         # pressure slack variables for entries, with obj coefficient
-        var_boundary_node_pressure_slack_positive = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_positive_{tstep}");
-        var_boundary_node_pressure_slack_negative = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_negative_{tstep}");
+        var_boundary_node_pressure_slack_positive[tstep] = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_positive_{tstep}");
+        var_boundary_node_pressure_slack_negative[tstep] = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_negative_{tstep}");
         # node inflow for entries and exits (inflow is negative for exits)
-        var_node_Qo_in[tstep] = m.addVars(no.nodes_with_bds, lb=-10000, ub=10000, name=f"var_node_Qo_in_{tstep}")
+        var_node_Qo_in[tstep] = m.addVars(no.nodes, lb=-10000, ub=10000, name=f"var_node_Qo_in_{tstep}")
 
         ## Pipe variables
         var_pipe_Qo_in[tstep] = m.addVars(co.pipes, lb=-10000, ub=10000, name=f"var_pipe_Qo_in_{tstep}")
@@ -154,21 +158,23 @@ def simulate(agent_decisions,compressors,dt):
 	# In our simulator setting we do not have to compute the full time horizon at once. We can do it step by step.
 	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
 	# This is impossible in the opimization setting in the paper.
-    #
-    ## forall nodes: connection_inflow - connection_outflow = node_inflow
-    m.addConstrs((var_node_Qo_in[n] - var_pipe_Qo_in.sum(n, '*') +  var_pipe_Qo_out.sum('*', n) - var_non_pipe_Qo.sum(n, '*') + var_non_pipe_Qo.sum('*', n) == 0 for n in no.nodes), name='c_e_cons_conserv_Qo')
-    #
-    ## forall inner nodes: node_inflow = 0
-    m.addConstrs((var_node_Qo_in[n] == 0 for n in no.innodes), name='innode_flow')
-    #
-    ## flow slack for boundary nodes
-    m.addConstrs((- var_boundary_node_flow_slack_positive[x] + var_node_Qo_in[x] <= get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='c_u_cons_boundary_node_wflow_slack_1')
-    m.addConstrs((- var_boundary_node_flow_slack_negative[x] - var_node_Qo_in[x] <= - get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='c_u_cons_boundary_node_wflow_slack_2')
-    #
-    ## pressure slack for boundary nodes
-    m.addConstrs((- var_boundary_node_pressure_slack_positive[e] + var_node_p[e] <= no.pressure[e] for e in no.entries), name='c_u_cons_boundary_node_wpressure_slack_1')
-    m.addConstrs((- var_boundary_node_pressure_slack_negative[e] - var_node_p[e] <= - no.pressure[e] for e in no.entries), name='c_u_cons_boundary_node_wpressure_slack_2')
-    #
+    #TODO: check if flow conservation is true for initial scenario
+    for tstep in range(1, numSteps + 1):
+        ## forall nodes: connection_inflow - connection_outflow = node_inflow
+        m.addConstrs((var_node_Qo_in[tstep][n] - var_pipe_Qo_in[tstep].sum(n, '*') +  var_pipe_Qo_out[tstep].sum('*', n) - var_non_pipe_Qo[tstep].sum(n, '*') + var_non_pipe_Qo[tstep].sum('*', n) == 0 for n in no.nodes), name=f'c_e_cons_conserv_Qo_{tstep}')
+        #
+        ## forall inner nodes: node_inflow = 0
+        m.addConstrs((var_node_Qo_in[tstep][n] == 0 for n in no.innodes), name=f'innode_flow_{tstep}')
+        #
+    for tstep in range(numSteps + 1):
+        ## flow slack for boundary nodes
+        m.addConstrs((- var_boundary_node_flow_slack_positive[tstep][x] + var_node_Qo_in[tstep][x] <= get_agent_decision(agent_decisions["exit_nom"]["X"][x],tstep) for x in no.exits), name=f'c_u_cons_boundary_node_wflow_slack_1_{tstep}')
+        m.addConstrs((- var_boundary_node_flow_slack_negative[tstep][x] - var_node_Qo_in[tstep][x] <= - get_agent_decision(agent_decisions["exit_nom"]["X"][x],tstep) for x in no.exits), name=f'c_u_cons_boundary_node_wflow_slack_2_{tstep}')
+        #
+        ## pressure slack for boundary nodes
+        m.addConstrs((- var_boundary_node_pressure_slack_positive[tstep][e] + var_node_p[tstep][e] <= no.pressure[e] for e in no.entries), name=f'c_u_cons_boundary_node_wpressure_slack_1_{tstep}')
+        m.addConstrs((- var_boundary_node_pressure_slack_negative[tstep][e] - var_node_p[tstep][e] <= - no.pressure[e] for e in no.entries), name=f'c_u_cons_boundary_node_wpressure_slack_2_{tstep}')
+        #
     for tstep in range(1, numSteps + 1):
         ## continuity equation
         m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
