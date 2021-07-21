@@ -55,6 +55,7 @@ def simulate(agent_decisions,compressors,dt):
     zeta_DA = {}
     gas_DA = {}
     compressor_DA = {}
+    nom_entry_slack_DA = {}
     ## Node variables
     for tstep in range(numSteps):
         # pressure for every node
@@ -97,7 +98,7 @@ def simulate(agent_decisions,compressors,dt):
         entry_nom_TA = m.addVars(co.special, name=f"entry_nom_TA_{tstep}")
 
         ## Auxiliary variable to track deviations from entry nominations ...
-        nom_entry_slack_DA = m.addVars(co.special, lb=-GRB.INFINITY, name=f"nom_entry_slack_DA_{tstep}")
+        nom_entry_slack_DA[tstep] = m.addVars(co.special, lb=-GRB.INFINITY, name=f"nom_entry_slack_DA_{tstep}")
         # ... and from exit nominations
         nom_exit_slack_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"nom_exit_slack_DA_{tstep}")
 
@@ -241,10 +242,11 @@ def simulate(agent_decisions,compressors,dt):
         m.addConstrs((var_non_pipe_Qo[tstep][cs] == compressor_DA[tstep][cs] * 3.6 * var_node_p[tstep - 1][cs[0]] * phi_new(compressor_DA[tstep][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"],gas_DA[tstep][cs],var_node_p[tstep - 1][cs[0]],var_node_p[tstep - 1][cs[1]]) for cs in co.compressors), name=f'compressor_eq_two_{tstep}')
     #
     ### ENTRY MODEL ###
-    # Suggested by Klaus and described in gasnet_control/docs/urmel-entry.pdf
-    #
-    m.addConstrs((var_node_Qo_in[e] <= no.entry_flow_bound[e] for e in no.entries), name='entry_flow_model')
-    m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nomination_check')
+    for tstep in range(numSteps):
+        # Suggested by Klaus and described in gasnet_control/docs/urmel-entry.pdf
+        #
+        m.addConstrs((var_node_Qo_in[tstep][e] <= no.entry_flow_bound[e] for e in no.entries), name=f'entry_flow_model_{tstep}')
+        m.addConstrs((var_pipe_Qo_out[tstep][s] + nom_entry_slack_DA[tstep][s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(tstep//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name=f'nomination_check_{tstep}')
 
     #m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special), name='nomination_check')
     #print("Exit nominations: {}".format([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]))
