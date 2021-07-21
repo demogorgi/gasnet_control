@@ -20,8 +20,10 @@ init_s = importlib.import_module(wd + ".init_scenario")
 no = importlib.import_module(wd + ".nodes")
 co = importlib.import_module(wd + ".connections")
 
+
 def joiner(s):
     return '^'.join(map(str,s))
+
 
 def get_agent_decision(deep_agent_decision,i):
     r = range(i,-2*config['nomination_freq']-1,-1)
@@ -31,6 +33,7 @@ def get_agent_decision(deep_agent_decision,i):
             #print("%s[%d] = %f" % (deep_agent_decision,i,deep_agent_decision[i]))
             #print("---------------------------------------------------------")
             return deep_agent_decision[i]
+
 
 def simulate(agent_decisions,compressors,dt):
     # Model
@@ -95,7 +98,7 @@ def simulate(agent_decisions,compressors,dt):
         va_DA[tstep] = m.addVars(co.valves, name=f"va_DA_{tstep}", vtype=GRB.BINARY)
         zeta_DA[tstep] = m.addVars(co.resistors, name=f"zeta_DA_{tstep}");
         gas_DA[tstep] = m.addVars(co.compressors, name=f"gas_DA_{tstep}")
-        compressor_DA[tstep] = m.addVars(co.compressors, name=f"compressor_DA_{tstep}")
+        compressor_DA[tstep] = m.addVars(co.compressors, name=f"compressor_DA_{tstep}", vtype=GRB.BINARY)
 
 
         ## Auxiliary variable to track deviations from entry nominations ...
