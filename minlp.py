@@ -97,9 +97,6 @@ def simulate(agent_decisions,compressors,dt):
         gas_DA[tstep] = m.addVars(co.compressors, name=f"gas_DA_{tstep}")
         compressor_DA[tstep] = m.addVars(co.compressors, name=f"compressor_DA_{tstep}")
 
-        ## Auxiliary variables to track trader agent decisions
-        exit_nom_TA = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"exit_nom_TA_{tstep}")
-        entry_nom_TA = m.addVars(co.special, name=f"entry_nom_TA_{tstep}")
 
         ## Auxiliary variable to track deviations from entry nominations ...
         nom_entry_slack_DA[tstep] = m.addVars(co.special, lb=-GRB.INFINITY, name=f"nom_entry_slack_DA_{tstep}")
@@ -157,12 +154,7 @@ def simulate(agent_decisions,compressors,dt):
         # original constraint:
         # vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6
         # vm(t,i,o) =  max(rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) ), 2)
-
-    ## constraints only to track trader agent's decisions
-    m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
-    m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nome')
-    #m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special), name='nome')
-    #
+#
     ## constraints only to track dispatcher agent's decisions
     m.addConstrs((va_DA[v] == get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='va_mode')
     m.addConstrs((zeta_DA[r] == get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) for r in co.resistors), name='re_drag')
