@@ -107,9 +107,9 @@ def simulate(agent_decisions,compressors,dt):
 
     ### AUXILIARY CONSTRAINTS ###
     #
-    m.addConstrs((var_node_p[0][n] == states[-1]["p"][n] for n in no.nodes))
-    m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes))
-    m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes))
+    m.addConstrs((var_node_p[0][n] == states[-1]["p"][n] for n in no.nodes), name='node_init')
+    m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes), name='pipes_in_init')
+    m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes), name='pipes_out_init')
     m.addConstrs((var_non_pipe_Qo[0][np] == states[-1]["q"][np] for np in co.non_pipes), name='compressor_init')
     for tstep in range(1, numSteps + 1):
         ## v * Q for pressure drop for pipes ...
@@ -146,7 +146,7 @@ def simulate(agent_decisions,compressors,dt):
     #
     for tstep in range(numSteps + 1):
         ## pressure difference p_out minus p_in
-        m.addConstrs((delta_p[tstep][c] == var_node_p[tstep][c[0]] - var_node_p[tstep][c[1]] for c in co.connections), name='dp')
+        m.addConstrs((delta_p[tstep][c] == var_node_p[tstep][c[0]] - var_node_p[tstep][c[1]] for c in co.connections), name=f'dp_{tstep}')
     #
     #
     ### NODE AND PIPE MODEL ###
@@ -171,11 +171,11 @@ def simulate(agent_decisions,compressors,dt):
     #
     for tstep in range(1, numSteps + 1):
         ## continuity equation
-        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name='c_e_cons_pipe_continuity')
+        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         #
         ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
-        m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
+        m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[tstep][p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_{tstep}')
     #
     #
     ### VALVE MODEL ###
