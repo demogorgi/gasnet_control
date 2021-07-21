@@ -56,6 +56,10 @@ def simulate(agent_decisions,compressors,dt):
     gas_DA = {}
     compressor_DA = {}
     nom_entry_slack_DA = {}
+    nom_exit_slack_DA = {}
+    scenario_balance_TA = {}
+    ub_pressure_violation_DA = {}
+    lb_pressure_violation_DA = {}
     ## Node variables
     for tstep in range(numSteps):
         # pressure for every node
@@ -100,14 +104,14 @@ def simulate(agent_decisions,compressors,dt):
         ## Auxiliary variable to track deviations from entry nominations ...
         nom_entry_slack_DA[tstep] = m.addVars(co.special, lb=-GRB.INFINITY, name=f"nom_entry_slack_DA_{tstep}")
         # ... and from exit nominations
-        nom_exit_slack_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"nom_exit_slack_DA_{tstep}")
+        nom_exit_slack_DA[tstep] = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"nom_exit_slack_DA_{tstep}")
 
         ## Auxiliary variable to track balances
-        scenario_balance_TA = m.addVar(lb=-GRB.INFINITY, name=f"scenario_balance_TA_{tstep}")
+        scenario_balance_TA[tstep] = m.addVar(lb=-GRB.INFINITY, name=f"scenario_balance_TA_{tstep}")
 
         ## Auxiliary variable to track pressure violations at exits
-        ub_pressure_violation_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"ub_pressure_violation_DA_{tstep}")
-        lb_pressure_violation_DA = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"lb_pressure_violation_DA_{tstep}")
+        ub_pressure_violation_DA[tstep] = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"ub_pressure_violation_DA_{tstep}")
+        lb_pressure_violation_DA[tstep] = m.addVars(no.exits, lb=-GRB.INFINITY, name=f"lb_pressure_violation_DA_{tstep}")
 
         ## Auxiliary variable to track smoothed flow over S-pipes
         smoothed_special_pipe_flow_DA = m.addVars(co.special, lb=-GRB.INFINITY, name=f"smoothed_special_pipe_flow_DA_{tstep}")
@@ -256,11 +260,11 @@ def simulate(agent_decisions,compressors,dt):
     #
     ### TRACKING OF RELEVANT VALUES ###
     #
-    m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
-    #m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
-    m.addConstrs((nom_exit_slack_DA[x] == var_boundary_node_flow_slack_positive[x] - var_boundary_node_flow_slack_negative[x] for x in no.exits), name='track_exit_nomination_slack')
-    m.addConstrs((var_node_p[n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[n] for n in no.exits), name='track_ub_pressure_violation')
-    m.addConstrs((no.pressure_limits_lower[n] - var_node_p[n] == lb_pressure_violation_DA[n] for n in no.exits), name='track_lb_pressure_violation')
+        m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(tstep//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],tstep) for x in no.exits]) == scenario_balance_TA[tstep]), f'track_scenario_balance{tstep}')
+        #m.addConstr((sum([get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special]) + sum([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]) == scenario_balance_TA), 'track_scenario_balance')
+        m.addConstrs((nom_exit_slack_DA[tstep][x] == var_boundary_node_flow_slack_positive[tstep][x] - var_boundary_node_flow_slack_negative[tstep][x] for x in no.exits), name=f'track_exit_nomination_slack_{tstep}')
+        m.addConstrs((var_node_p[tstep][n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_ub_pressure_violation_{tstep}')
+        m.addConstrs((no.pressure_limits_lower[n] - var_node_p[tstep][n] == lb_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_lb_pressure_violation_{tstep}')
     #
     #
     ### TESTS ###
