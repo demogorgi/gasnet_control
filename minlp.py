@@ -126,8 +126,9 @@ def simulate(agent_decisions,compressors,dt):
     ## constraints only to track smoothing of special pipe flows
     m.addConstrs((smoothed_special_pipe_flow_DA[s] == ( q_in_old(t,s) + q_out_old(t,s) + var_pipe_Qo_in[s] + var_pipe_Qo_out[s] ) / 4 for s in co.special), name='special_pipe_smoothing')
     #
-    ## pressure difference p_out minus p_in
-    m.addConstrs((delta_p[c] == var_node_p[c[0]] - var_node_p[c[1]] for c in co.connections), name='dp')
+    for tstep in range(numSteps + 1):
+        ## pressure difference p_out minus p_in
+        m.addConstrs((delta_p[tstep][c] == var_node_p[tstep][c[0]] - var_node_p[tstep][c[1]] for c in co.connections), name='dp')
     #
     #
     ### NODE AND PIPE MODEL ###
