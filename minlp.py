@@ -43,6 +43,7 @@ def simulate(agent_decisions,compressors,dt):
     var_pipe_Qo_in = {}
     var_pipe_Qo_out = {}
     var_non_pipe_Qo = {}
+    vQp = {}
     delta_p = {}
     gas_DA = {}
     compressor_DA = {}
@@ -70,7 +71,7 @@ def simulate(agent_decisions,compressors,dt):
         checkvalve = m.addVars(co.check_valves, vtype=GRB.BINARY, name=f"checkvalve_{tstep}")
 
         ## Auxiliary variables v * Q for pressure drop for pipes ...
-        vQp = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
+        vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
         # ... and resistors
         vQr = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_{tstep}") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
 
@@ -106,8 +107,25 @@ def simulate(agent_decisions,compressors,dt):
 
     ### AUXILIARY CONSTRAINTS ###
     #
-	## v * Q for pressure drop for pipes ...
-    m.addConstrs((vQp[p] == ( vi(t,*p) * var_pipe_Qo_in[p] + vo(t,*p) * var_pipe_Qo_out[p] ) * rho / 3.6 for p in co.pipes), name='vxQp')
+    m.addConstrs((var_node_p[0][n] == states[-1]["p"][n] for n in no.nodes))
+    m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes))
+    m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes))
+    m.addConstrs((var_non_pipe_Qo[0][np] == states[-1]["q"][np] for np in co.non_pipes), name='compressor_init')
+    for tstep in range(1, numSteps + 1):
+        ## v * Q for pressure drop for pipes ...
+        m.addConstrs((vQp[tstep][p] == ( ((Rs * Tm * zm(var_node_p[tstep - 1][p[0]],var_node_p[tstep - 1][p[1]]) / A(co.diameter[p]))
+                                         * rho / 3.6 * var_pipe_Qo_in[tstep - 1][p] / ( b2p * var_node_p[tstep - 1][p[0]] ))
+                                         * var_pipe_Qo_in[tstep][p] +
+                                         ((Rs * Tm * zm(var_node_p[tstep - 1][p[0]],var_node_p[tstep - 1][p[1]]) / A(co.diameter[p]))
+                                         * rho / 3.6 * var_pipe_Qo_out[tstep - 1][p] / ( b2p * var_node_p[tstep - 1][p[1]] ))
+                                         * var_pipe_Qo_out[p] )
+                      * rho / 3.6 for p in co.pipes), name=f'vxQp_{tstep}')
+        # original constraint:
+        #vQp[p] == (vi(t, *p) * var_pipe_Qo_in[p] + vo(t, *p) * var_pipe_Qo_out[
+        #    p]) * rho / 3.6
+        # vi(t,i,o) = rtza(t,i,o) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
+        # vo(t,i,o) = rtza(t,i,o) * rho / 3.6 * q_out_old(t,(i,o)) / ( b2p * p_old(t,o) )
+        # rtza(t,i,o) = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
     # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
     m.addConstrs((vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6 for r in co.resistors), name='vxQr')
@@ -157,7 +175,7 @@ def simulate(agent_decisions,compressors,dt):
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         #
         ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
-        m.addConstrs(( b2p * delta_p[p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
+        m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[p] for p in co.pipes), name='c_e_cons_pipe_momentum')
     #
     #
     ### VALVE MODEL ###
