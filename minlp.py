@@ -47,6 +47,7 @@ def simulate(agent_decisions,compressors,dt):
     var_pipe_Qo_in = {}
     var_pipe_Qo_out = {}
     var_non_pipe_Qo = {}
+    checkvalve = {}
     vQp = {}
     vQr = {}
     delta_p = {}
@@ -75,7 +76,7 @@ def simulate(agent_decisions,compressors,dt):
         var_non_pipe_Qo[tstep] = m.addVars(co.non_pipes, lb=-10000, ub=10000, name=f"var_non_pipe_Qo_{tstep}")
 
         ## Flap trap variables
-        checkvalve = m.addVars(co.check_valves, vtype=GRB.BINARY, name=f"checkvalve_{tstep}")
+        checkvalve[tstep] = m.addVars(co.check_valves, vtype=GRB.BINARY, name=f"checkvalve_{tstep}")
 
         ## Auxiliary variables v * Q for pressure drop for pipes ...
         vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
@@ -223,19 +224,20 @@ def simulate(agent_decisions,compressors,dt):
         #
         #
     ### CHECK VALVE MODEL ###
-    #
-    m.addConstrs((var_non_pipe_Qo[f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
-    m.addConstrs((var_non_pipe_Qo[f] <= Mq * checkvalve[f] for f in co.check_valves), name='check_valve_eq_two')
-    m.addConstrs((delta_p[f] <= Mq * ( 1 - checkvalve[f] ) + 0.2 * b2p for f in co.check_valves), name='check_valve_eq_three')
-    m.addConstrs(( - delta_p[f] <= Mq * ( 1 - checkvalve[f] ) for f in co.check_valves), name='check_valve_eq_four')
-    m.addConstrs((delta_p[f] <= 0 for f in co.check_valves), name='check_valve_eq_five')
-    #
+        #
+        m.addConstrs((var_non_pipe_Qo[tstep][f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
+        m.addConstrs((var_non_pipe_Qo[tstep][f] <= Mq * checkvalve[tstep][f] for f in co.check_valves), name='check_valve_eq_two')
+        m.addConstrs((delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep][f] ) + 0.2 * b2p for f in co.check_valves), name='check_valve_eq_three')
+        m.addConstrs(( - delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep][f] ) for f in co.check_valves), name='check_valve_eq_four')
+        m.addConstrs((delta_p[tstep][f] <= 0 for f in co.check_valves), name='check_valve_eq_five')
+        #
     ### COMPRESSOR MODEL ###
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf
     #
-    m.addConstrs((var_non_pipe_Qo[0][cs] == states[-1]["q"][cs] for cs in co.compressors), name='compressor_init')
-    for tstep in range(1, numSteps + 1):
-        m.addConstrs((var_non_pipe_Qo[tstep][cs] >= 0 for cs in co.compressors), name='compressor_eq_one')
+    m.addConstrs((var_non_pipe_Qo[0][cs] >= 0 for cs in co.compressors), name='compressor_eq_one_0')
+    m.addConstrs((var_non_pipe_Qo[0][cs] == compressor_DA[0][cs] * 3.6 * states[-2]["p"][cs[0]] * phi_new(compressor_DA[0][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"], gas_DA[0][cs],states[-2]["p"][cs[0]],states[-2]["p"][cs[1]]) for cs in co.compressors), name=f'compressor_eq_two_{0}')
+    for tstep in range(1, numSteps):
+        m.addConstrs((var_non_pipe_Qo[tstep][cs] >= 0 for cs in co.compressors), name=f'compressor_eq_one_{tstep}')
         m.addConstrs((var_non_pipe_Qo[tstep][cs] == compressor_DA[tstep][cs] * 3.6 * var_node_p[tstep - 1][cs[0]] * phi_new(compressor_DA[tstep][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"],gas_DA[tstep][cs],var_node_p[tstep - 1][cs[0]],var_node_p[tstep - 1][cs[1]]) for cs in co.compressors), name=f'compressor_eq_two_{tstep}')
     #
     ### ENTRY MODEL ###
