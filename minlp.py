@@ -48,11 +48,14 @@ def simulate(agent_decisions,compressors,dt):
     var_pipe_Qo_out = {}
     var_non_pipe_Qo = {}
     vQp = {}
+    vQr = {}
     delta_p = {}
+    va_DA = {}
+    zeta_DA = {}
     gas_DA = {}
     compressor_DA = {}
     ## Node variables
-    for tstep in range(numSteps + 1):
+    for tstep in range(numSteps):
         # pressure for every node
         var_node_p[tstep] = m.addVars(no.nodes, lb=1.01325, ub=501.01325, name=f"var_node_p_{tstep}")
         # flow slack variables for exits, with obj coefficient
@@ -77,14 +80,14 @@ def simulate(agent_decisions,compressors,dt):
         ## Auxiliary variables v * Q for pressure drop for pipes ...
         vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
         # ... and resistors
-        vQr = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_{tstep}") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
+        vQr[tstep] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_{tstep}") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
 
         ## Auxiliary variable pressure difference p_out minus p_in
         delta_p[tstep] = m.addVars(co.connections, lb=-Mp, ub=Mp, name=f"delta_p_{tstep}") #:= var_node_p[l] - var_node_p[r];
 
         ## Auxiliary variables to track dispatcher agent decisions
-        va_DA = m.addVars(co.valves, name=f"va_DA_{tstep}")
-        zeta_DA = m.addVars(co.resistors, name=f"zeta_DA_{tstep}");
+        va_DA[tstep] = m.addVars(co.valves, name=f"va_DA_{tstep}", vtype=GRB.BINARY)
+        zeta_DA[tstep] = m.addVars(co.resistors, name=f"zeta_DA_{tstep}");
         gas_DA[tstep] = m.addVars(co.compressors, name=f"gas_DA_{tstep}")
         compressor_DA[tstep] = m.addVars(co.compressors, name=f"compressor_DA_{tstep}")
 
@@ -115,14 +118,21 @@ def simulate(agent_decisions,compressors,dt):
     m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes), name='pipes_in_init')
     m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes), name='pipes_out_init')
     m.addConstrs((var_non_pipe_Qo[0][np] == states[-1]["q"][np] for np in co.non_pipes), name='compressor_init')
-    for tstep in range(1, numSteps + 1):
-        ## v * Q for pressure drop for pipes ...
+    ## v * Q for pressure drop for pipes ...
+    m.addConstrs((vQp[0][p] == (((Rs * Tm * zm(states[-2]["p"][p[0]],states[-2]["p"][p[1]]) / A(co.diameter[p]))
+                                     * rho / 3.6 * states[-2]["q_in"][p] / (b2p * states[-2]["p"][p[0]]))
+                                    * var_pipe_Qo_in[0][p] +
+                                    ((Rs * Tm * zm(states[-2]["p"][p[0]],states[-2]["p"][p[1]]) / A(co.diameter[p]))
+                                     * rho / 3.6 * states[-2]["q_out"][p] / (b2p * states[-2]["p"][p[1]]))
+                                    * var_pipe_Qo_out[0][p])
+                  * rho / 3.6 for p in co.pipes), name=f'vxQp_{tstep}')
+    for tstep in range(1, numSteps):
         m.addConstrs((vQp[tstep][p] == ( ((Rs * Tm * zm(var_node_p[tstep - 1][p[0]],var_node_p[tstep - 1][p[1]]) / A(co.diameter[p]))
                                          * rho / 3.6 * var_pipe_Qo_in[tstep - 1][p] / ( b2p * var_node_p[tstep - 1][p[0]] ))
                                          * var_pipe_Qo_in[tstep][p] +
                                          ((Rs * Tm * zm(var_node_p[tstep - 1][p[0]],var_node_p[tstep - 1][p[1]]) / A(co.diameter[p]))
                                          * rho / 3.6 * var_pipe_Qo_out[tstep - 1][p] / ( b2p * var_node_p[tstep - 1][p[1]] ))
-                                         * var_pipe_Qo_out[p] )
+                                         * var_pipe_Qo_out[tstep][p] )
                       * rho / 3.6 for p in co.pipes), name=f'vxQp_{tstep}')
         # original constraint:
         #vQp[p] == (vi(t, *p) * var_pipe_Qo_in[p] + vo(t, *p) * var_pipe_Qo_out[
@@ -130,10 +140,18 @@ def simulate(agent_decisions,compressors,dt):
         # vi(t,i,o) = rtza(t,i,o) * rho / 3.6 * q_in_old(t,(i,o)) / ( b2p * p_old(t,i) )
         # vo(t,i,o) = rtza(t,i,o) * rho / 3.6 * q_out_old(t,(i,o)) / ( b2p * p_old(t,o) )
         # rtza(t,i,o) = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
-    # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
+        # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
-    m.addConstrs((vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6 for r in co.resistors), name='vxQr')
-    #
+    m.addConstrs((vQr[0][r] == (rho / 3.6 * ((Rs * Tm * zm(states[-2]["p"][r[0]],states[-2][r[1]]) / A(co.diameter[r]))))
+                  * var_non_pipe_Qo[0][r] * rho / 3.6 for r in co.resistors), name=f'vxQr_{0}')
+    for tstep in range(1, numSteps):
+
+        m.addConstrs((vQr[tstep][r] == (rho / 3.6 * ( (Rs * Tm * zm(var_node_p[tstep - 1][r[0]],var_node_p[tstep - 1][r[1]]) / A(co.diameter[r]))))
+                      * var_non_pipe_Qo[tstep][r] * rho / 3.6 for r in co.resistors), name=f'vxQr_{tstep}')
+        # original constraint:
+        # vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6
+        # vm(t,i,o) =  max(rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) ), 2)
+
     ## constraints only to track trader agent's decisions
     m.addConstrs((exit_nom_TA[x] == get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits), name='nomx')
     m.addConstrs((entry_nom_TA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(t//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name='nome')
@@ -148,7 +166,7 @@ def simulate(agent_decisions,compressors,dt):
     ## constraints only to track smoothing of special pipe flows
     m.addConstrs((smoothed_special_pipe_flow_DA[s] == ( q_in_old(t,s) + q_out_old(t,s) + var_pipe_Qo_in[s] + var_pipe_Qo_out[s] ) / 4 for s in co.special), name='special_pipe_smoothing')
     #
-    for tstep in range(numSteps + 1):
+    for tstep in range(numSteps):
         ## pressure difference p_out minus p_in
         m.addConstrs((delta_p[tstep][c] == var_node_p[tstep][c[0]] - var_node_p[tstep][c[1]] for c in co.connections), name=f'dp_{tstep}')
     #
@@ -159,14 +177,14 @@ def simulate(agent_decisions,compressors,dt):
 	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
 	# This is impossible in the opimization setting in the paper.
     #TODO: check if flow conservation is true for initial scenario
-    for tstep in range(1, numSteps + 1):
+    for tstep in range(1, numSteps):
         ## forall nodes: connection_inflow - connection_outflow = node_inflow
         m.addConstrs((var_node_Qo_in[tstep][n] - var_pipe_Qo_in[tstep].sum(n, '*') +  var_pipe_Qo_out[tstep].sum('*', n) - var_non_pipe_Qo[tstep].sum(n, '*') + var_non_pipe_Qo[tstep].sum('*', n) == 0 for n in no.nodes), name=f'c_e_cons_conserv_Qo_{tstep}')
         #
         ## forall inner nodes: node_inflow = 0
         m.addConstrs((var_node_Qo_in[tstep][n] == 0 for n in no.innodes), name=f'innode_flow_{tstep}')
         #
-    for tstep in range(numSteps + 1):
+    for tstep in range(numSteps):
         ## flow slack for boundary nodes
         m.addConstrs((- var_boundary_node_flow_slack_positive[tstep][x] + var_node_Qo_in[tstep][x] <= get_agent_decision(agent_decisions["exit_nom"]["X"][x],tstep) for x in no.exits), name=f'c_u_cons_boundary_node_wflow_slack_1_{tstep}')
         m.addConstrs((- var_boundary_node_flow_slack_negative[tstep][x] - var_node_Qo_in[tstep][x] <= - get_agent_decision(agent_decisions["exit_nom"]["X"][x],tstep) for x in no.exits), name=f'c_u_cons_boundary_node_wflow_slack_2_{tstep}')
@@ -175,33 +193,35 @@ def simulate(agent_decisions,compressors,dt):
         m.addConstrs((- var_boundary_node_pressure_slack_positive[tstep][e] + var_node_p[tstep][e] <= no.pressure[e] for e in no.entries), name=f'c_u_cons_boundary_node_wpressure_slack_1_{tstep}')
         m.addConstrs((- var_boundary_node_pressure_slack_negative[tstep][e] - var_node_p[tstep][e] <= - no.pressure[e] for e in no.entries), name=f'c_u_cons_boundary_node_wpressure_slack_2_{tstep}')
         #
-    for tstep in range(1, numSteps + 1):
-        ## continuity equation
+    ## continuity equation and ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
+    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-2]["p"][p[0]] - states[-2]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * zm(var_node_p[0][p[0]],var_node_p[0][p[1]]) / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{0}')
+    m.addConstrs(( b2p * delta_p[0][p] == xip(p) * vQp[0][p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_{0}')
+    for tstep in range(1, numSteps):
         m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         #
-        ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
         m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[tstep][p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_{tstep}')
     #
     #
     ### VALVE MODEL ###
-    # As in section "2.4 Valves" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
-    #
-    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] <= Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_one')
-    m.addConstrs((var_node_p[v[0]] - var_node_p[v[1]] >= - Mp * ( 1 - get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) ) for v in co.valves), name='valve_eq_two')
-    m.addConstrs((var_non_pipe_Qo[v] <= Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_three')
-    m.addConstrs((var_non_pipe_Qo[v] >= - Mq * get_agent_decision(agent_decisions["va"]["VA"][joiner(v)],t) for v in co.valves), name='valve_eq_four')
-    #
-    #
+    for tstep in range(numSteps):
+        # As in section "2.4 Valves" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
+        #
+        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] <= Mp * ( 1 - va_DA[tstep][v] ) for v in co.valves), name=f'valve_eq_one_{tstep}')
+        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] >= - Mp * ( 1 - va_DA[tstep][v] ) for v in co.valves), name=f'valve_eq_two_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][v] <= Mq * va_DA[tstep][v] for v in co.valves), name=f'valve_eq_three_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][v] >= - Mq * va_DA[tstep][v] for v in co.valves), name=f'valve_eq_four_{tstep}')
+        #
+        #
     ### CONTROL VALVE MODEL ###
-    # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
-    # We use resistors as control valves by controlling the resistors drag factor from outside
-    #
-    ## pressure drop equation (eqn. 21 Station_Model_Paper.pdf)
-    # we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interaval [0,100]
-    m.addConstrs(( b2p * delta_p[r] == xir(r, 2 ** ( get_agent_decision(agent_decisions["zeta"]["RE"][joiner(r)],t) / 3 )) * vQr[r] for r in co.resistors), name='resistor_eq')
-    #
-    #
+        # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
+        # We use resistors as control valves by controlling the resistors drag factor from outside
+        #
+        ## pressure drop equation (eqn. 21 Station_Model_Paper.pdf)
+        # we use 2 ** (zeta/3) to map the "original" interval of relevant zeta values to the interaval [0,100]
+        m.addConstrs(( b2p * delta_p[tstep][r] == xir(r, 2 ** ( zeta_DA[tstep][r] / 3 )) * vQr[tstep][r] for r in co.resistors), name='resistor_eq')
+        #
+        #
     ### CHECK VALVE MODEL ###
     #
     m.addConstrs((var_non_pipe_Qo[f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
