@@ -96,7 +96,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [100_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
