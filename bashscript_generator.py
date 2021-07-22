@@ -2,7 +2,7 @@ import os
 import sys
 
 template_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/' \
-                'cdqn_template.sh'
+                'cdqn_template_200k.sh'
 destination_path = '/home/adi/Uni/SoSe21/Masterarbeit/cluster/'
 update_steps = [1, 5, 20, 100, 500] #, 50, 100, 200, 500, 2000] #[200, 500, 2000, 5000]
 epsilons = [1, 0.5, 0.25, 0.1] #[0.5, 0.25, 0.1, 0.05]
