@@ -36,7 +36,7 @@ process_type = "sim"
 #### START OF URMEL PART
 
 # m ist the simulator model with agent decisisons, compressor specs and timestep length incorporated
-m = simulate(agent_decisions, compressors, dt)
+m = simulate(agent_decisions, compressors, dt, 10)
 # control output
 m.params.logToConsole = config['grb_console']
 m.params.logfile = config['grb_logfile']
