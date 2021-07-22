@@ -1,6 +1,6 @@
 from params import *
 from urmel import get_agent_decision, p_old, L_max_axis_intercept
-from main import agent_decisions
+from simulate import agent_decisions
 
 
 import matplotlib.pyplot as plt
