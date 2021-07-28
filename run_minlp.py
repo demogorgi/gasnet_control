@@ -43,10 +43,13 @@ m.params.logfile = config['grb_logfile']
 # tuned parameters
 m.params.heuristics = 0
 m.params.cuts = 0
+m.setParam("FeasibilityTol", 1e-9)
 m.optimize()
 # get the model status
 status = m.status
 # if solved to optimallity
+output = path.join(sys.argv[1],'output')
+step_files_path = "".join([output, "/", config["name"]]).replace("\\", "/")
 if config['urmel_console_output']:
     print("model status: ", status)
 if status == GRB.OPTIMAL:  # == 2
@@ -62,6 +65,9 @@ elif status == GRB.INFEASIBLE:
     if config['write_ilp'] and (process_type == "sim" or config["debug"]):
         if config['urmel_console_output']:
             print("Model is infeasible. %s.lp/ilp written." % config['name'])
+        m.computeIIS()
+        m.write(step_files_path + ".ilp")
+        m.write(step_files_path + ".lp")
     else:
         if config['urmel_console_output']:
             print("Model is infeasible.")
