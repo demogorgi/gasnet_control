@@ -90,11 +90,11 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # pressure for every node
         var_node_p[tstep] = m.addVars(no.nodes, lb=1.01325, ub=501.01325, name=f"var_node_p_{tstep}")
         # flow slack variables for exits, with obj coefficient
-        var_boundary_node_flow_slack_positive[tstep] = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_positive_{tstep}");
-        var_boundary_node_flow_slack_negative[tstep] = m.addVars(no.exits, obj=1, name=f"var_boundary_node_flow_slack_negative_{tstep}");
+        var_boundary_node_flow_slack_positive[tstep] = m.addVars(no.exits, obj=0, name=f"var_boundary_node_flow_slack_positive_{tstep}");
+        var_boundary_node_flow_slack_negative[tstep] = m.addVars(no.exits, obj=0, name=f"var_boundary_node_flow_slack_negative_{tstep}");
         # pressure slack variables for entries, with obj coefficient
-        var_boundary_node_pressure_slack_positive[tstep] = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_positive_{tstep}");
-        var_boundary_node_pressure_slack_negative[tstep] = m.addVars(no.entries, obj=10, name=f"var_boundary_node_pressure_slack_negative_{tstep}");
+        var_boundary_node_pressure_slack_positive[tstep] = m.addVars(no.entries, obj=0, name=f"var_boundary_node_pressure_slack_positive_{tstep}");
+        var_boundary_node_pressure_slack_negative[tstep] = m.addVars(no.entries, obj=0, name=f"var_boundary_node_pressure_slack_negative_{tstep}");
         # node inflow for entries and exits (inflow is negative for exits)
         var_node_Qo_in[tstep] = m.addVars(no.nodes, lb=-10000, ub=10000, name=f"var_node_Qo_in_{tstep}")
 
