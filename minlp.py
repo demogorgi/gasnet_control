@@ -387,8 +387,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((nom_exit_slack_DA[tstep][x] == var_boundary_node_flow_slack_positive[tstep][x] - var_boundary_node_flow_slack_negative[tstep][x] for x in no.exits), name=f'track_exit_nomination_slack_{tstep}')
         m.addConstrs((var_node_p[tstep][n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_ub_pressure_violation_{tstep}')
         m.addConstrs((no.pressure_limits_lower[n] - var_node_p[tstep][n] == lb_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_lb_pressure_violation_{tstep}')
-        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= ub_pressure_violation_DA[tstep][n] for n in no.exits), name=f"penalize_ub_pressure_viol_{tstep}")
-        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= lb_pressure_violation_DA[tstep][n] for n in no.exits), name=f"penalize_lb_pressure_viol_{tstep}")
+        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= ub_pressure_violation_DA[tstep][n]/300 for n in no.exits), name=f"penalize_ub_pressure_viol_{tstep}")
+        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= lb_pressure_violation_DA[tstep][n]/1.2 for n in no.exits), name=f"penalize_lb_pressure_viol_{tstep}")
         if tstep % config["nomination_freq"] == 0:
             m.addConstr((double_exit_viol[tstep] <= 1/2 * gp.quicksum([exit_viol[tstep][n] for n in no.exits])), f"double_penalize_pressure_viol_{tstep}")
     #
