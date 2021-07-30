@@ -41,9 +41,9 @@ m = simulate(agent_decisions, compressors, dt, 10)
 m.params.logToConsole = config['grb_console']
 m.params.logfile = config['grb_logfile']
 # tuned parameters
-m.params.heuristics = 0
-m.params.cuts = 0
-m.setParam("FeasibilityTol", 1e-9)
+#m.setParam("FeasibilityTol", 10e-2)
+m.setParam("NonConvex", 2)
+#m.setParam("NumericFocus", 1)
 m.optimize()
 # get the model status
 status = m.status
