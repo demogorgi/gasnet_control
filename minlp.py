@@ -172,17 +172,17 @@ def simulate(agent_decisions,compressors,dt,discretization):
 
     ### AUXILIARY CONSTRAINTS ###
     #
-    m.addConstrs((var_node_p[0][n] == states[-1]["p"][n] for n in no.nodes), name='node_init')
-    m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes), name='pipes_in_init')
-    m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes), name='pipes_out_init')
+    #m.addConstrs((var_node_p[0][n] == states[-1]["p"][n] for n in no.nodes), name='node_init')
+    #m.addConstrs((var_pipe_Qo_in[0][p] == states[-1]["q_in"][p] for p in co.pipes), name='pipes_in_init')
+    #m.addConstrs((var_pipe_Qo_out[0][p] == states[-1]["q_out"][p] for p in co.pipes), name='pipes_out_init')
     #m.addConstrs((var_non_pipe_Qo[0][np] == states[-1]["q"][np] for np in co.non_pipes), name='compressor_init')
     ## v * Q for pressure drop for pipes ...
 
-    m.addConstrs((vQp[0][p] == (((Rs * Tm * zm(states[-2]["p"][p[0]],states[-2]["p"][p[1]]) / A(co.diameter[p]))
-                                     * rho / 3.6 * states[-2]["q_in"][p] / (b2p * states[-2]["p"][p[0]]))
+    m.addConstrs((vQp[0][p] == (((Rs * Tm * zm(states[-1]["p"][p[0]],states[-1]["p"][p[1]]) / A(co.diameter[p]))
+                                     * rho / 3.6 * states[-1]["q_in"][p] / (b2p * states[-1]["p"][p[0]]))
                                     * var_pipe_Qo_in[0][p] +
-                                    ((Rs * Tm * zm(states[-2]["p"][p[0]],states[-2]["p"][p[1]]) / A(co.diameter[p]))
-                                     * rho / 3.6 * states[-2]["q_out"][p] / (b2p * states[-2]["p"][p[1]]))
+                                    ((Rs * Tm * zm(states[-1]["p"][p[0]],states[-1]["p"][p[1]]) / A(co.diameter[p]))
+                                     * rho / 3.6 * states[-1]["q_out"][p] / (b2p * states[-1]["p"][p[1]]))
                                     * var_pipe_Qo_out[0][p])
                   * rho / 3.6 for p in co.pipes), name=f'vxQp_{0}')
     for tstep in range(numSteps):
@@ -207,7 +207,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # rtza(t,i,o) = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
-    m.addConstrs((vQr[0][r] == (rho / 3.6 * ((Rs * Tm * zm(states[-2]["p"][r[0]],states[-2]["p"][r[1]]) / A(co.diameter[r]))))
+    m.addConstrs((vQr[0][r] == (rho / 3.6 * ((Rs * Tm * zm(states[-1]["p"][r[0]],states[-1]["p"][r[1]]) / A(co.diameter[r]))))
                   * var_non_pipe_Qo[0][r] * rho / 3.6 for r in co.resistors), name=f'vxQr_{0}')
     for tstep in range(1, numSteps):
         m.addConstrs((vQr_zm[tstep][r] == zm(var_node_p[tstep - 1][r[0]],var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f'vxQr_zm_{tstep}')
@@ -224,7 +224,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
     # m.addConstrs((compressor_DA[cs] == get_agent_decision(agent_decisions["compressor"]["CS"][joiner(cs)],t) for cs in co.compressors), name='cs_mode')
     #
     ## constraints only to track smoothing of special pipe flows
-    m.addConstrs((smoothed_special_pipe_flow_DA[0][s] == ( states[-2]["q_in"][s] + states[-2]["q_out"][s] + var_pipe_Qo_in[0][s] + var_pipe_Qo_out[0][s] ) / 4 for s in co.special), name=f'special_pipe_smoothing_{0}')
+    m.addConstrs((smoothed_special_pipe_flow_DA[0][s] == ( states[-1]["q_in"][s] + states[-1]["q_out"][s] + var_pipe_Qo_in[0][s] + var_pipe_Qo_out[0][s] ) / 4 for s in co.special), name=f'special_pipe_smoothing_{0}')
     for tstep in range(1, numSteps):
         m.addConstrs((smoothed_special_pipe_flow_DA[tstep][s] == ( var_pipe_Qo_in[tstep -1][s] + var_pipe_Qo_out[tstep - 1][s] + var_pipe_Qo_in[tstep][s] + var_pipe_Qo_out[tstep][s] ) / 4 for s in co.special), name=f'special_pipe_smoothing_{tstep}')
     #
@@ -239,7 +239,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
 	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
 	# This is impossible in the opimization setting in the paper.
     #TODO: check if flow conservation is true for initial scenario
-    for tstep in range(1, numSteps):
+    for tstep in range(numSteps):
         ## forall nodes: connection_inflow - connection_outflow = node_inflow
         m.addConstrs((var_node_Qo_in[tstep][n] - var_pipe_Qo_in[tstep].sum(n, '*') +  var_pipe_Qo_out[tstep].sum('*', n) - var_non_pipe_Qo[tstep].sum(n, '*') + var_non_pipe_Qo[tstep].sum('*', n) == 0 for n in no.nodes), name=f'c_e_cons_conserv_Qo_{tstep}')
         #
@@ -256,10 +256,12 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((- var_boundary_node_pressure_slack_negative[tstep][e] - var_node_p[tstep][e] <= - no.pressure[e] for e in no.entries), name=f'c_u_cons_boundary_node_wpressure_slack_2_{tstep}')
         #
     ## continuity equation and ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
-    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-2]["p"][p[0]] - states[-2]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) <= var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_<={0}')
-    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-2]["p"][p[0]] - states[-2]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) >= -var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_>={0}')
-    m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] <= var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_<={0}')
-    m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] >= -var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_>={0}')
+    #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) <= var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_<={0}')
+    #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) >= -var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_>={0}')
+    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_0')
+    m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] == 0 for p in co.pipes), name=f'c_e_cons_pipe_momentum_0')
+    #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] <= var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_<={0}')
+    #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] >= -var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_>={0}')
     for tstep in range(1, numSteps):
         m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * vQp_zm[tstep][p] / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
@@ -280,8 +282,9 @@ def simulate(agent_decisions,compressors,dt,discretization):
     ### CONTROL VALVE MODEL ###
     m.addConstrs(( zeta_DA[0][r] == gp.quicksum([2**(d/3) * zeta_aux[0][d][r] for d in range(discretization + 1)]) for r in co.resistors), name=f'resistor_aux_0')
     m.addConstrs(( gp.quicksum([zeta_aux[0][d][r] for d in range(discretization + 1)]) == 1 for r in co.resistors), name=f'resistor_bins_0')
-    m.addConstrs((b2p * delta_p[0][r] - xir(r, zeta_DA[0][r]) * vQr[0][r] <= var_resis_slack[r] for r in co.resistors), name=f'resistor_eq_<={0}')
-    m.addConstrs((b2p * delta_p[0][r] - xir(r, zeta_DA[0][r]) * vQr[0][r] >= -var_resis_slack[r] for r in co.resistors), name=f'resistor_eq_>={0}')
+    m.addConstrs((b2p * delta_p[0][r] - xir(r, zeta_DA[0][r]) * vQr[0][r] == 0 for r in co.resistors), name=f'resistor_eq_0')
+    #m.addConstrs((b2p * delta_p[0][r] - xir(r, zeta_DA[0][r]) * vQr[0][r] <= var_resis_slack[r] for r in co.resistors), name=f'resistor_eq_<={0}')
+    #m.addConstrs((b2p * delta_p[0][r] - xir(r, zeta_DA[0][r]) * vQr[0][r] >= -var_resis_slack[r] for r in co.resistors), name=f'resistor_eq_>={0}')
     for tstep in range(1, numSteps):
         # Suggested by Klaus and inspired by section "2.3 Resistors" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364.
         # We use resistors as control valves by controlling the resistors drag factor from outside
@@ -311,27 +314,27 @@ def simulate(agent_decisions,compressors,dt,discretization):
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf
     #
     m.addConstrs((var_non_pipe_Qo[0][cs] >= 0 for cs in co.compressors), name='compressor_eq_one_0')
-    m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-2]["p"][cs[0]] * comp_phi_new[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
+    m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-1]["p"][cs[0]] * comp_phi_new[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
     m.addConstrs(( (compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[0][cs] +
-                   compressors[joiner(cs)]["pi_2"] * states[-2]["p"][cs[0]] - states[-2]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
+                   compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
                    for cs in co.compressors), name=f"compressor_eq_three_0")
-    m.addConstrs((comp_phi_frac[0][cs] * comp_phi[0][cs] == states[-2]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_four_0")
+    m.addConstrs((comp_phi_frac[0][cs] * comp_phi[0][cs] == states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_four_0")
     m.addConstrs((comp_phi_new[0][cs] == comp_phi[0][cs] * compressor_DA[0][cs] for cs in co.compressors), name=f"compressor_eq_five_0")
     m.addConstrs((comp_phi[0][cs] == gp.min_(comp_phi_aux[0][cs], compressors[joiner(cs)]["phi_max"]) for cs in co.compressors), name=f"compressor_eq_six_0")
     m.addConstrs((comp_phi_aux[0][cs] == gp.max_(comp_i[0][cs], compressors[joiner(cs)]["phi_min"]) for cs in co.compressors), name=f"compressor_eq_seven_0")
     # pressure squared equation for further time steps
-    m.addConstrs((comp_gas_aux[0][cs] == gas_DA[0][cs] * states[-2]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_nine_0")
+    m.addConstrs((comp_gas_aux[0][cs] == gas_DA[0][cs] * states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_nine_0")
     m.addConstrs((comp_i[0][cs] == compressors[joiner(cs)]["phi_MIN"]/((-compressors[joiner(cs)]["p_in_max"] + compressors[joiner(cs)]["p_in_min"]) * compressors[joiner(cs)]["pi_MIN"]) *
-                  (compressors[joiner(cs)]["pi_MAX"] * states[-2]["p"][cs[0]]**2 * comp_gas_aux[0][cs] -
-                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["eta"] * states[-2]["p"][cs[0]]**2 * comp_gas_aux[0][cs] -
-                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["p_in_max"] * comp_gas_aux[0][cs] * states[-2]["p"][cs[0]] -
-                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] * states[-2]["p"][cs[0]]**2 +
-                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] * comp_gas_aux[0][cs] * states[-2]["p"][cs[0]] +
-                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["p_in_min"] * compressors[joiner(cs)]["eta"] * comp_gas_aux[0][cs] * states[-2]["p"][cs[0]] +
-                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_min"] * states[-2]["p"][cs[0]]**2 -
-                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_min"] * comp_gas_aux[0][cs] * states[-2]["p"][cs[0]] +
-                   compressors[joiner(cs)]["p_in_max"] * states[-2]["p"][cs[0]] * states[-2]["p"][cs[1]] -
-                   compressors[joiner(cs)]["p_in_min"] * states[-2]["p"][cs[0]] * states[-2]["p"][cs[1]])
+                  (compressors[joiner(cs)]["pi_MAX"] * states[-1]["p"][cs[0]]**2 * comp_gas_aux[0][cs] -
+                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["eta"] * states[-1]["p"][cs[0]]**2 * comp_gas_aux[0][cs] -
+                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["p_in_max"] * comp_gas_aux[0][cs] * states[-1]["p"][cs[0]] -
+                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] * states[-1]["p"][cs[0]]**2 +
+                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] * comp_gas_aux[0][cs] * states[-1]["p"][cs[0]] +
+                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["p_in_min"] * compressors[joiner(cs)]["eta"] * comp_gas_aux[0][cs] * states[-1]["p"][cs[0]] +
+                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_min"] * states[-1]["p"][cs[0]]**2 -
+                   compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_min"] * comp_gas_aux[0][cs] * states[-1]["p"][cs[0]] +
+                   compressors[joiner(cs)]["p_in_max"] * states[-1]["p"][cs[0]] * states[-1]["p"][cs[1]] -
+                   compressors[joiner(cs)]["p_in_min"] * states[-1]["p"][cs[0]] * states[-1]["p"][cs[1]])
                   for cs in co.compressors), f"compressor_eq_ten_0")
     # phi_new(compressor_DA[0][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"], gas_DA[0][cs],states[-2]["p"][cs[0]],states[-2]["p"][cs[1]])
     for tstep in range(1, numSteps):
