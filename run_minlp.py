@@ -44,6 +44,7 @@ m.params.logfile = config['grb_logfile']
 #m.setParam("FeasibilityTol", 10e-2)
 m.setParam("NonConvex", 2)
 #m.setParam("NumericFocus", 1)
+m.setParam("Threads", 4)
 m.optimize()
 # get the model status
 status = m.status
