@@ -111,9 +111,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         ## Auxiliary variables v * Q for pressure drop for pipes ...
         vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
         vQp_vi[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vi_{tstep}")
-        vQp_vi_rhs[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vi_rhs_{tstep}")
         vQp_vo[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vo_{tstep}")
-        vQp_vo_rhs[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vo_rhs_{tstep}")
         vQp_zm[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_zm_{tstep}")
         if tstep == 0:
             var_mom_slack = m.addVars(co.pipes, name=f"var_mom_slack_0")
@@ -188,13 +186,9 @@ def simulate(agent_decisions,compressors,dt,discretization):
     for tstep in range(numSteps):
         m.addConstrs((vQp_zm[tstep][p] == zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) for p in co.pipes), name=f'vxQp_zm_{tstep}')
     for tstep in range(1, numSteps):
-        m.addConstrs((vQp_vi_rhs[tstep][p] * ( b2p * var_node_p[tstep - 1][p[0]] ) == rho / 3.6 * var_pipe_Qo_in[tstep - 1][p] for p in co.pipes),
-                     name=f'vxQp_vi_rhs_{tstep}')
-        m.addConstrs((vQp_vo_rhs[tstep][p] * ( b2p * var_node_p[tstep - 1][p[1]] ) == rho / 3.6 * var_pipe_Qo_out[tstep - 1][p] for p in co.pipes),
-                     name=f'vxQp_vo_rhs_{tstep}')
-        m.addConstrs((vQp_vi[tstep][p] == (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * vQp_vi_rhs[tstep][p] for p in co.pipes),
+        m.addConstrs((vQp_vi[tstep][p] * ( b2p * var_node_p[tstep - 1][p[0]] ) == (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * rho / 3.6 * var_pipe_Qo_in[tstep - 1][p] for p in co.pipes),
                      name=f'vxQp_vi_{tstep}')
-        m.addConstrs((vQp_vo[tstep][p] == (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * vQp_vo_rhs[tstep][p] for p in co.pipes),
+        m.addConstrs((vQp_vo[tstep][p] * ( b2p * var_node_p[tstep - 1][p[1]] ) == (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * rho / 3.6 * var_pipe_Qo_out[tstep - 1][p] for p in co.pipes),
                      name=f'vxQp_vo_{tstep}')
         m.addConstrs((vQp[tstep][p] == ( vQp_vi[tstep][p] * var_pipe_Qo_in[tstep][p] +
                                          vQp_vo[tstep][p] * var_pipe_Qo_out[tstep][p] )
