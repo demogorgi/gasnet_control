@@ -133,7 +133,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         comp_phi[tstep] = m.addVars(co.compressors, name=f"comp_phi_{tstep}")
         comp_phi_aux[tstep] = m.addVars(co.compressors, name=f"comp_phi_aux_{tstep}")
         comp_i[tstep] = m.addVars(co.compressors, name=f"comp_i_{tstep}")
-        var_node_p_frac[tstep] = m.addVars(no.nodes, name=f"var_node_p_frac_{tstep}")
+        var_node_p_frac[tstep] = m.addVars(co.compressors, name=f"var_node_p_frac_{tstep}")
 
         ## Auxiliary variables to track dispatcher agent decisions
         if tstep % config["nomination_freq"] == 0:
@@ -312,7 +312,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
     #m.addConstrs(( (compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[0][cs] +
     #               compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
     #               for cs in co.compressors), name=f"compressor_eq_three_0")
-    m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_ohi[0][cs] * states[-1]["p"][cs[0]] +
+    m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi[0][cs] * states[-1]["p"][cs[0]] +
                   compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
                   for cs in co.compressors), name=f"compressor_eq_two_0")
     #m.addConstrs((comp_phi_frac[0][cs] * comp_phi[0][cs] == states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_four_0")
@@ -323,7 +323,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
     #m.addConstrs((comp_gas_aux[0][cs] == gas_DA[0][cs] * states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_nine_0")
     m.addConstrs((comp_i[0][cs] == compressors[joiner(cs)]["phi_MIN"]/((-compressors[joiner(cs)]["p_in_max"] + compressors[joiner(cs)]["p_in_min"]) * compressors[joiner(cs)]["pi_MIN"]) *
                   (compressors[joiner(cs)]["pi_MAX"] * states[-1]["p"][cs[0]] * gas_DA[0][cs] -
-                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["eta"] * states[-1]["p"][cs[0]]**2 * comp_gas_aux[0][cs] -
+                   compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["eta"] * states[-1]["p"][cs[0]] * gas_DA[0][cs] -
                    compressors[joiner(cs)]["pi_MAX"] * compressors[joiner(cs)]["p_in_max"] * gas_DA[0][cs] -
                    compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] +
                    compressors[joiner(cs)]["pi_MIN"] * compressors[joiner(cs)]["p_in_max"] * gas_DA[0][cs] +
