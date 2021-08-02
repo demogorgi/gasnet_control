@@ -17,10 +17,10 @@ urmel_console_output: True
 # gurobi logfile
 grb_logfile: '' #gurobi.log
 # gurobi console output
-grb_console: False
+grb_console: True
 # contour output (net- and state-files in contour folder)
 contour_output: False
 # how often new trader nomination comes (number of timesteps)
-nomination_freq: 8
+nomination_freq: 2
 # controlling random nomination values [start(opt),stop,step(opt)]
 randrange: [0,1101,50]

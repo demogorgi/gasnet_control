@@ -59,6 +59,11 @@ def simulate(agent_decisions,compressors,dt,discretization):
     vQp_zm = {}
     vQr = {}
     vQr_zm = {}
+    vQr_p_aux = {}
+    vQr_v_rhs = {}
+    vQr_v_lhs = {}
+    vQr_v_arg = {}
+    vQr_v_max = {}
     delta_p = {}
     comp_phi_new = {}
     comp_phi = {}
@@ -81,7 +86,6 @@ def simulate(agent_decisions,compressors,dt,discretization):
     lb_pressure_violation_DA = {}
     exit_viol = {}
     double_exit_viol = {}
-    smoothed_special_pipe_flow_DA = {}
     ## Node variables
     var_mom_slack = {}
     var_cont_slack = {}
@@ -118,7 +122,12 @@ def simulate(agent_decisions,compressors,dt,discretization):
             var_cont_slack = m.addVars(co.pipes, name=f"var_cont_slack_0")
         # ... and resistors
         vQr[tstep] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_{tstep}") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
-        vQr_zm[tstep] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_zm_{tstep}")
+        vQr_zm[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_zm_{tstep}")
+        vQr_p_aux[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_p_aux_{tstep}")
+        vQr_v_rhs[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_rhs_{tstep}")
+        vQr_v_lhs[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_lhs_{tstep}")
+        vQr_v_arg[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_arg_{tstep}")
+        vQr_v_max[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_max_{tstep}")
         if tstep == 0:
             var_resis_slack = m.addVars(co.resistors, name=f"var_resis_slack_0")
 
@@ -135,7 +144,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         var_node_p_squ[tstep] = m.addVars(no.nodes, name=f"var_node_p_squ_{tstep}")
 
         ## Auxiliary variables to track dispatcher agent decisions
-        va_DA[tstep] = m.addVars(co.valves, name=f"va_DA_{tstep}", vtype=GRB.BINARY)
+        if tstep % config["nomination_freq"] == 0:
+            va_DA[tstep] = m.addVars(co.valves, name=f"va_DA_{tstep}", vtype=GRB.BINARY)
         if tstep % config["nomination_freq"] == 0:
             zeta_aux[tstep] = {}
             for d in range(discretization + 1):
@@ -162,9 +172,6 @@ def simulate(agent_decisions,compressors,dt,discretization):
         if tstep % config["nomination_freq"] == 0:
             exit_viol[tstep] = m.addVars(no.exits, obj=2/3, vtype=GRB.BINARY, name=f"exit_viol_{tstep}")
             double_exit_viol[tstep] = m.addVar(obj=-1/3, vtype=GRB.BINARY, name=f"double_exit_viol_{tstep}")
-
-        ## Auxiliary variable to track smoothed flow over S-pipes
-        smoothed_special_pipe_flow_DA[tstep] = m.addVars(co.special, lb=-GRB.INFINITY, name=f"smoothed_special_pipe_flow_DA_{tstep}")
 
     #### From here on the constraints have to be added. ####
 
@@ -201,12 +208,21 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # rtza(t,i,o) = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
-    m.addConstrs((vQr[0][r] == (rho / 3.6 * ((Rs * Tm * zm(states[-1]["p"][r[0]],states[-1]["p"][r[1]]) / A(co.diameter[r]))))
-                  * var_non_pipe_Qo[0][r] * rho / 3.6 for r in co.resistors), name=f'vxQr_{0}')
+    m.addConstrs((vQr_zm[-1][r] == zm(states[-1]["p"][r[0]], states[-1]["p"][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_0")
+    m.addConstrs((vQr_p_aux[-1][r] == states[-1]["p"][r[0]] * states[-1]["p"][r[1]] for r in co.resistors), name=f"vxQr_eq_two_0")
+    m.addConstrs((vQr_v_rhs[-1][r] * vQr_p_aux[-1][r] == states[-1]["p"][r[0]] + states[-1]["p"][r[1]] for r in co.resistors), name=f"vxQr_eq_three_0")
+    m.addConstrs((vQr_v_lhs[-1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[-1][r] * states[-1]["q"][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_0")
+    m.addConstrs((vQr_v_arg[-1][r] == vQr_v_lhs[-1][r] * vQr_v_rhs[-1][r] for r in co.resistors), name=f"vxQr_eq_five_0")
+    m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_max[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
+    m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
     for tstep in range(1, numSteps):
-        m.addConstrs((vQr_zm[tstep][r] == zm(var_node_p[tstep - 1][r[0]],var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f'vxQr_zm_{tstep}')
-        m.addConstrs((vQr[tstep][r] == (rho / 3.6 * ( (Rs * Tm * vQr_zm[tstep][r] / A(co.diameter[r]))))
-                      * var_non_pipe_Qo[tstep][r] * rho / 3.6 for r in co.resistors), name=f'vxQr_{tstep}')
+        m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
+        m.addConstrs((vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] * var_node_p[tstep -1][r[1]] for r in co.resistors), name=f"vxQr_eq_two_{tstep}")
+        m.addConstrs((vQr_v_rhs[tstep - 1][r] * vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] + var_node_p[tstep - 1][r[1]] for r in co.resistors), name=f"vxQr_eq_three_{tstep}")
+        m.addConstrs((vQr_v_lhs[tstep - 1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[tstep - 1][r] * var_non_pipe_Qo[tstep -1][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_{tstep}")
+        m.addConstrs((vQr_v_arg[tstep - 1][r] == vQr_v_lhs[tstep - 1][r] * vQr_v_rhs[tstep - 1][r] for r in co.resistors), name=f"vxQr_eq_five_{tstep}")
+        m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_max[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
+        m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_max[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
         # original constraint:
         # vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6
         # vm(t,i,o) =  max(rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) ), 2)
@@ -217,13 +233,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
     # m.addConstrs((gas_DA[cs] == get_agent_decision(agent_decisions["gas"]["CS"][joiner(cs)],t) for cs in co.compressors), name='cs_fuel')
     # m.addConstrs((compressor_DA[cs] == get_agent_decision(agent_decisions["compressor"]["CS"][joiner(cs)],t) for cs in co.compressors), name='cs_mode')
     #
-    ## constraints only to track smoothing of special pipe flows
-    m.addConstrs((smoothed_special_pipe_flow_DA[0][s] == ( states[-1]["q_in"][s] + states[-1]["q_out"][s] + var_pipe_Qo_in[0][s] + var_pipe_Qo_out[0][s] ) / 4 for s in co.special), name=f'special_pipe_smoothing_{0}')
-    for tstep in range(1, numSteps):
-        m.addConstrs((smoothed_special_pipe_flow_DA[tstep][s] == ( var_pipe_Qo_in[tstep -1][s] + var_pipe_Qo_out[tstep - 1][s] + var_pipe_Qo_in[tstep][s] + var_pipe_Qo_out[tstep][s] ) / 4 for s in co.special), name=f'special_pipe_smoothing_{tstep}')
-    #
+    ## pressure difference p_out minus p_in
     for tstep in range(numSteps):
-        ## pressure difference p_out minus p_in
         m.addConstrs((delta_p[tstep][c] == var_node_p[tstep][c[0]] - var_node_p[tstep][c[1]] for c in co.connections), name=f'dp_{tstep}')
     #
     #
@@ -232,7 +243,6 @@ def simulate(agent_decisions,compressors,dt,discretization):
 	# In our simulator setting we do not have to compute the full time horizon at once. We can do it step by step.
 	# This allows us to use variables from the previous step to approximate nonlinear terms in the current step.
 	# This is impossible in the opimization setting in the paper.
-    #TODO: check if flow conservation is true for initial scenario
     for tstep in range(numSteps):
         ## forall nodes: connection_inflow - connection_outflow = node_inflow
         m.addConstrs((var_node_Qo_in[tstep][n] - var_pipe_Qo_in[tstep].sum(n, '*') +  var_pipe_Qo_out[tstep].sum('*', n) - var_non_pipe_Qo[tstep].sum(n, '*') + var_non_pipe_Qo[tstep].sum('*', n) == 0 for n in no.nodes), name=f'c_e_cons_conserv_Qo_{tstep}')
@@ -252,12 +262,12 @@ def simulate(agent_decisions,compressors,dt,discretization):
     ## continuity equation and ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
     #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) <= var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_<={0}')
     #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) >= -var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_>={0}')
-    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_0')
+    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * zm(states[-1]["p"][p[0]],states[-1]["p"][p[1]]) / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_0')
     m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] == 0 for p in co.pipes), name=f'c_e_cons_pipe_momentum_0')
     #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] <= var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_<={0}')
     #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] >= -var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_>={0}')
     for tstep in range(1, numSteps):
-        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * vQp_zm[tstep][p] / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
+        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         #
         m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[tstep][p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_{tstep}')
@@ -267,10 +277,10 @@ def simulate(agent_decisions,compressors,dt,discretization):
     for tstep in range(numSteps):
         # As in section "2.4 Valves" of https://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/7364
         #
-        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] <= Mp * ( 1 - va_DA[tstep][v] ) for v in co.valves), name=f'valve_eq_one_{tstep}')
-        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] >= - Mp * ( 1 - va_DA[tstep][v] ) for v in co.valves), name=f'valve_eq_two_{tstep}')
-        m.addConstrs((var_non_pipe_Qo[tstep][v] <= Mq * va_DA[tstep][v] for v in co.valves), name=f'valve_eq_three_{tstep}')
-        m.addConstrs((var_non_pipe_Qo[tstep][v] >= - Mq * va_DA[tstep][v] for v in co.valves), name=f'valve_eq_four_{tstep}')
+        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] <= Mp * ( 1 - va_DA[tstep//config["nomination_freq"]][v] ) for v in co.valves), name=f'valve_eq_one_{tstep}')
+        m.addConstrs((var_node_p[tstep][v[0]] - var_node_p[tstep][v[1]] >= - Mp * ( 1 - va_DA[tstep//config["nomination_freq"]][v] ) for v in co.valves), name=f'valve_eq_two_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][v] <= Mq * va_DA[tstep//config["nomination_freq"]][v] for v in co.valves), name=f'valve_eq_three_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][v] >= - Mq * va_DA[tstep//config["nomination_freq"]][v] for v in co.valves), name=f'valve_eq_four_{tstep}')
         #
         #
     ### CONTROL VALVE MODEL ###
@@ -290,18 +300,16 @@ def simulate(agent_decisions,compressors,dt,discretization):
                          name=f'resistor_aux_{tstep}')
             m.addConstrs((gp.quicksum([zeta_aux[tstep][d][r] for d in range(discretization + 1)]) == 1 for r in co.resistors),
                          name=f'resistor_bins_{tstep}')
-        else:
-            m.addConstrs((zeta_DA[tstep][r] == zeta_DA[tstep - 1][r] for r in co.resistors), name=f'resistor_continue_{tstep}')
-        m.addConstrs(( b2p * delta_p[tstep][r] == xir(r, zeta_DA[tstep][r]) * vQr[tstep][r] for r in co.resistors), name=f'resistor_eq_{tstep}')
+        m.addConstrs(( b2p * delta_p[tstep][r] == xir(r, zeta_DA[tstep//config["nomination_freq"]][r]) * vQr[tstep][r] for r in co.resistors), name=f'resistor_eq_{tstep}')
         #
         #
     ### CHECK VALVE MODEL ###
     for tstep in range(numSteps):
         #
         m.addConstrs((var_non_pipe_Qo[tstep][f] >= 0 for f in co.check_valves), name='check_valve_eq_one')
-        m.addConstrs((var_non_pipe_Qo[tstep][f] <= Mq * checkvalve[tstep][f] for f in co.check_valves), name='check_valve_eq_two')
-        m.addConstrs((delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep][f] ) + 0.2 * b2p for f in co.check_valves), name='check_valve_eq_three')
-        m.addConstrs(( - delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep][f] ) for f in co.check_valves), name='check_valve_eq_four')
+        m.addConstrs((var_non_pipe_Qo[tstep][f] <= Mq * checkvalve[tstep//config["nomination_freq"]][f] for f in co.check_valves), name='check_valve_eq_two')
+        m.addConstrs((delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep//config["nomination_freq"]][f] ) + 0.2 * b2p for f in co.check_valves), name='check_valve_eq_three')
+        m.addConstrs(( - delta_p[tstep][f] <= Mq * ( 1 - checkvalve[tstep//config["nomination_freq"]][f] ) for f in co.check_valves), name='check_valve_eq_four')
         m.addConstrs((delta_p[tstep][f] <= 0 for f in co.check_valves), name='check_valve_eq_five')
         #
     ### COMPRESSOR MODEL ###
