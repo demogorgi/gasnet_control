@@ -110,7 +110,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         var_non_pipe_Qo[tstep] = m.addVars(co.non_pipes, lb=-10000, ub=10000, name=f"var_non_pipe_Qo_{tstep}")
 
         ## Flap trap variables
-        checkvalve[tstep] = m.addVars(co.check_valves, vtype=GRB.BINARY, name=f"checkvalve_{tstep}")
+        if tstep % config["nomination_freq"] == 0:
+            checkvalve[tstep] = m.addVars(co.check_valves, vtype=GRB.BINARY, name=f"checkvalve_{tstep}")
 
         ## Auxiliary variables v * Q for pressure drop for pipes ...
         vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
