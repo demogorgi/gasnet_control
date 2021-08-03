@@ -183,7 +183,15 @@ def simulate(agent_decisions,compressors,dt,discretization):
                                     * var_pipe_Qo_out[0][p])
                   * rho / 3.6 for p in co.pipes), name=f'vxQp_{0}')
     for tstep in range(numSteps):
-        m.addConstrs((vQp_zm[tstep][p] == zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) for p in co.pipes), name=f'vxQp_zm_{tstep}')
+        #m.addConstrs((vQp_zm[tstep][p] == zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) for p in co.pipes), name=f'vxQp_zm_{tstep}')
+        m.addConstrs((vQp_zm[tstep][p] == zm(states[-1]["p"][p[0]], states[-1]["p"][p[1]]) for p in co.pipes), name=f"vxQp_zm_{tstep}")
+        #m.addConstrs((vQp_zm[tstep][p] == 0.5 * (
+        #        1 - 3.52 * pr(p[0]) * exp(-2.26 * Tr(Tm)) + 0.274 * pr(p[0]) ** 2 * exp(-1.878 * Tr(Tm)) +
+        #        1 - 3.52 * pr(p[1]) * exp(-2.26 * Tr(Tm)) + 0.274 * pr(p[1]) ** 2 * exp(-1.878 * Tr(Tm)))
+        #              for p in co.pipes), name=f"vxQp_zm_{tstep}")
+        #m.addConstrs((vQp_zm[tstep][p] == 1 -
+        #              0.5 * 3.52 * exp(-2.26 * Tr(Tm)) / pc * (var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]])
+        #              for p in co.pipes), name=f"vxQp_zm_{tstep}")
     for tstep in range(1, numSteps):
         m.addConstrs((vQp_vi[tstep][p] * ( b2p * var_node_p[tstep - 1][p[0]] ) == (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * rho / 3.6 * var_pipe_Qo_in[tstep - 1][p] for p in co.pipes),
                      name=f'vxQp_vi_{tstep}')
@@ -200,12 +208,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # rtza(t,i,o) = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
-    m.addConstrs((vQr_zm[-1][r] == zm(states[-1]["p"][r[0]], states[-1]["p"][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_0")
-    m.addConstrs((vQr_p_aux[-1][r] == states[-1]["p"][r[0]] * states[-1]["p"][r[1]] for r in co.resistors), name=f"vxQr_eq_two_0")
-    m.addConstrs((vQr_v_rhs[-1][r] * vQr_p_aux[-1][r] == states[-1]["p"][r[0]] + states[-1]["p"][r[1]] for r in co.resistors), name=f"vxQr_eq_three_0")
-    m.addConstrs((vQr_v_lhs[-1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[-1][r] * states[-1]["q"][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_0")
-    m.addConstrs((vQr_v_arg[-1][r] == vQr_v_lhs[-1][r] * vQr_v_rhs[-1][r] for r in co.resistors), name=f"vxQr_eq_five_0")
-    m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_max[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
+    m.addConstrs((vQr_v_arg[-1][r] == (rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * zm(states[-1]["p"][r[0]], states[-1]["p"][r[1]]) * states[-1]["q"][r] / b2p) * (states[-1]["p"][r[0]] + states[-1]["p"][r[1]])/(states[-1]["p"][r[0]] * states[-1]["p"][r[1]]) for r in co.resistors), name=f"vxQr_eq_five_0")
+    m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
     m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
     for tstep in range(1, numSteps):
         m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
@@ -213,7 +217,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((vQr_v_rhs[tstep - 1][r] * vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] + var_node_p[tstep - 1][r[1]] for r in co.resistors), name=f"vxQr_eq_three_{tstep}")
         m.addConstrs((vQr_v_lhs[tstep - 1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[tstep - 1][r] * var_non_pipe_Qo[tstep -1][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_{tstep}")
         m.addConstrs((vQr_v_arg[tstep - 1][r] == vQr_v_lhs[tstep - 1][r] * vQr_v_rhs[tstep - 1][r] for r in co.resistors), name=f"vxQr_eq_five_{tstep}")
-        m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_max[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
+        m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_arg[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
         m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_max[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
         # original constraint:
         # vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6
@@ -254,12 +258,12 @@ def simulate(agent_decisions,compressors,dt,discretization):
     ## continuity equation and ## pressure drop equation (eqn. 20 without gravitational term from Station_Model_Paper.pdf)
     #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) <= var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_<={0}')
     #m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * vQp_zm[0][p] / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) >= -var_cont_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_continuity_>={0}')
-    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * (Rs * Tm * zm(states[-1]["p"][p[0]],states[-1]["p"][p[1]]) / A(co.diameter[p])) * dt) / co.length[p] * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_0')
+    m.addConstrs((b2p * (var_node_p[0][p[0]] + var_node_p[0][p[1]] - states[-1]["p"][p[0]] - states[-1]["p"][p[1]]) + rho / 3.6 * (2 * Rs * Tm * zm(states[-1]["p"][p[0]],states[-1]["p"][p[1]]) * dt) / (A(co.diameter[p]) * co.length[p]) * (var_pipe_Qo_out[0][p] - var_pipe_Qo_in[0][p]) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_0')
     m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] == 0 for p in co.pipes), name=f'c_e_cons_pipe_momentum_0')
     #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] <= var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_<={0}')
     #m.addConstrs(( b2p * delta_p[0][p] - xip(p) * vQp[0][p] >= -var_mom_slack[p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_>={0}')
     for tstep in range(1, numSteps):
-        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * ( 2 * (Rs * Tm * vQp_zm[tstep - 1][p] / A(co.diameter[p])) * dt ) / co.length[p] * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
+        m.addConstrs(( b2p * ( var_node_p[tstep][p[0]] + var_node_p[tstep][p[1]] - var_node_p[tstep - 1][p[0]] - var_node_p[tstep - 1][p[1]] ) + rho / 3.6 * (2 * Rs * Tm * vQp_zm[tstep - 1][p] * dt) / (A(co.diameter[p]) * co.length[p]) * ( var_pipe_Qo_out[tstep][p] - var_pipe_Qo_in[tstep][p] ) == 0 for p in co.pipes), name=f'c_e_cons_pipe_continuity_{tstep}')
         #  rtza = Rs * Tm * zm(p_old(t,i),p_old(t,o)) / A(co.diameter[(i,o)])
         #
         m.addConstrs(( b2p * delta_p[tstep][p] == xip(p) * vQp[tstep][p] for p in co.pipes), name=f'c_e_cons_pipe_momentum_{tstep}')
@@ -370,8 +374,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((var_node_Qo_in[tstep][e] <= no.entry_flow_bound[e] for e in no.entries), name=f'entry_flow_model_{tstep}')
         m.addConstrs((var_pipe_Qo_out[tstep][s] + nom_entry_slack_DA[tstep][s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],(tstep//config['nomination_freq']-2)*config['nomination_freq']) for s in co.special), name=f'nomination_check_{tstep}')
         if tstep % config["nomination_freq"] == 0:
-            m.addConstrs((nom_entry_dev_pos[tstep][s] >= 1/4400 * gp.quicksum([nom_entry_slack_DA[k][s] for k in range(tstep, tstep + config["nomination_freq"])]) for s in co.special), name=f"nom_pos_deviation_{tstep}")
-            m.addConstrs((-nom_entry_dev_neg[tstep][s] <= 1/4400 * gp.quicksum([nom_entry_slack_DA[k][s] for k in range(tstep, tstep + config["nomination_freq"])]) for s in co.special), name=f"nom_neg_deviation_{tstep}")
+            m.addConstrs((nom_entry_dev_pos[tstep][s] >= 1/17600 * gp.quicksum([nom_entry_slack_DA[k][s] for k in range(tstep, tstep + config["nomination_freq"])]) for s in co.special), name=f"nom_pos_deviation_{tstep}")
+            m.addConstrs((-nom_entry_dev_neg[tstep][s] <= 1/17600 * gp.quicksum([nom_entry_slack_DA[k][s] for k in range(tstep, tstep + config["nomination_freq"])]) for s in co.special), name=f"nom_neg_deviation_{tstep}")
 
     #m.addConstrs((var_pipe_Qo_out[s] + nom_entry_slack_DA[s] == get_agent_decision(agent_decisions["entry_nom"]["S"][joiner(s)],t//config['nomination_freq']) for s in co.special), name='nomination_check')
     #print("Exit nominations: {}".format([get_agent_decision(agent_decisions["exit_nom"]["X"][x],t) for x in no.exits]))
@@ -386,8 +390,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((nom_exit_slack_DA[tstep][x] == var_boundary_node_flow_slack_positive[tstep][x] - var_boundary_node_flow_slack_negative[tstep][x] for x in no.exits), name=f'track_exit_nomination_slack_{tstep}')
         m.addConstrs((var_node_p[tstep][n] - no.pressure_limits_upper[n] == ub_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_ub_pressure_violation_{tstep}')
         m.addConstrs((no.pressure_limits_lower[n] - var_node_p[tstep][n] == lb_pressure_violation_DA[tstep][n] for n in no.exits), name=f'track_lb_pressure_violation_{tstep}')
-        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= ub_pressure_violation_DA[tstep][n]/300 for n in no.exits), name=f"penalize_ub_pressure_viol_{tstep}")
-        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= lb_pressure_violation_DA[tstep][n]/1.2 for n in no.exits), name=f"penalize_lb_pressure_viol_{tstep}")
+        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= ub_pressure_violation_DA[tstep][n]/600 for n in no.exits), name=f"penalize_ub_pressure_viol_{tstep}")
+        m.addConstrs((exit_viol[config["nomination_freq"] * (tstep//config["nomination_freq"])][n] >= lb_pressure_violation_DA[tstep][n]/2 for n in no.exits), name=f"penalize_lb_pressure_viol_{tstep}")
         if tstep % config["nomination_freq"] == 0:
             m.addConstr((double_exit_viol[tstep] <= 1/2 * gp.quicksum([exit_viol[tstep][n] for n in no.exits])), f"double_penalize_pressure_viol_{tstep}")
     #
