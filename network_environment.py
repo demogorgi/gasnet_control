@@ -159,15 +159,18 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
                           for ex in no.exits]
         if self._random_nominations:
-            nomination_sum = int(np.abs(sum(nominations_t0)))
-            n_entries = len(no.nodes_with_bds) - len(no.exits)
-            breaks = random.choices(range(0, nomination_sum + 1, 50),
-                                    k=n_entries - 1)
-            breaks.sort()
-            breaks = [0] + breaks + [nomination_sum]
-
-            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
-                               for break_step in range(1, n_entries + 1)]
+            # nomination_sum = int(np.abs(sum(nominations_t0)))
+            # n_entries = len(no.nodes_with_bds) - len(no.exits)
+            # breaks = random.choices(range(0, nomination_sum + 1, 50),
+            #                         k=n_entries - 1)
+            # breaks.sort()
+            # breaks = [0] + breaks + [nomination_sum]
+            #
+            # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+            #                    for break_step in range(1, n_entries + 1)]
+            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+                               [0 + self._entry_offset]
+                               for supply in co.special]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
                                [0 + self._entry_offset]
@@ -178,20 +181,32 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
 
         if self._random_nominations:
-            for count, node in enumerate(no.exits):
+            # for count, node in enumerate(no.exits):
+            #     try:
+            #         nomination = init_decisions["exit_nom"]["X"][node]\
+            #             [self._steps_per_agent_steps]
+            #     except KeyError:
+            #         nomination = nominations_t0[count]
+            #     nominations_t1 += [nomination]
+            #
+            # breaks = random.choices(range(0, nomination_sum + 1, 50),
+            #                        k=n_entries - 1)
+            # breaks.sort()
+            # breaks = [0] + breaks + [nomination_sum]
+            # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+            #                    for break_step in range(1, n_entries + 1)]
+            for count, node in enumerate(no.exits + co.special):
                 try:
-                    nomination = init_decisions["exit_nom"]["X"][node]\
-                        [self._steps_per_agent_steps]
+                    if type(node) == str:
+                        nomination = init_decisions["exit_nom"]["X"][node]\
+                            [self._steps_per_agent_steps]
+                    else:
+                        key = joiner(node)
+                        nomination = init_decisions["entry_nom"]["S"][key]\
+                            [self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
-
-            breaks = random.choices(range(0, nomination_sum + 1, 50),
-                                   k=n_entries - 1)
-            breaks.sort()
-            breaks = [0] + breaks + [nomination_sum]
-            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
-                               for break_step in range(1, n_entries + 1)]
         else:
             for count, node in enumerate(no.exits + co.special):
                 try:
@@ -251,15 +266,18 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                           for ex in no.exits]
 
         if self._random_nominations:
-            nomination_sum = int(np.abs(sum(nominations_t0)))
-            n_entries = len(no.nodes_with_bds) - len(no.exits)
-            breaks = random.choices(range(0, nomination_sum + 1, 50),
-                                    k=n_entries - 1)
-            breaks.sort()
-            breaks = [0] + breaks + [nomination_sum]
-
-            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
-                               for break_step in range(1, n_entries + 1)]
+            # nomination_sum = int(np.abs(sum(nominations_t0)))
+            # n_entries = len(no.nodes_with_bds) - len(no.exits)
+            # breaks = random.choices(range(0, nomination_sum + 1, 50),
+            #                         k=n_entries - 1)
+            # breaks.sort()
+            # breaks = [0] + breaks + [nomination_sum]
+            #
+            # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+            #                    for break_step in range(1, n_entries + 1)]
+            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+                               [0 + self._entry_offset]
+                               for supply in co.special]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
                                [0 + self._entry_offset]
@@ -268,20 +286,32 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
 
         if self._random_nominations:
-            for count, node in enumerate(no.exits):
+            # for count, node in enumerate(no.exits):
+            #     try:
+            #         nomination = init_decisions["exit_nom"]["X"][node]\
+            #             [self._steps_per_agent_steps]
+            #     except KeyError:
+            #         nomination = nominations_t0[count]
+            #     nominations_t1 += [nomination]
+            #
+            # breaks = random.choices(range(0, nomination_sum + 1, 50),
+            #                        k=n_entries - 1)
+            # breaks.sort()
+            # breaks = [0] + breaks + [nomination_sum]
+            # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+            #                    for break_step in range(1, n_entries + 1)]
+            for count, node in enumerate(no.exits + co.special):
                 try:
-                    nomination = init_decisions["exit_nom"]["X"][node]\
-                        [self._steps_per_agent_steps]
+                    if type(node) == str:
+                        nomination = init_decisions["exit_nom"]["X"][node]\
+                            [self._steps_per_agent_steps]
+                    else:
+                        key = joiner(node)
+                        nomination = init_decisions["entry_nom"]["S"][key]\
+                            [self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
-
-            breaks = random.choices(range(0, nomination_sum + 1, 50),
-                                   k=n_entries - 1)
-            breaks.sort()
-            breaks = [0] + breaks + [nomination_sum]
-            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
-                               for break_step in range(1, n_entries + 1)]
         else:
             for count, node in enumerate(no.exits + co.special):
                 try:
