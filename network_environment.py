@@ -522,23 +522,23 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             nomination -= 50
                 nominations_t1 += [nomination]
 
-            for count, node in enumerate(no.exits):
-                try:
-                    nomination = agent_decisions["exit_nom"]["X"][node]\
-                        [(self._action_counter + 1) *
-                         self._steps_per_agent_steps]
-                except KeyError:
-                    nomination = nominations_t0[count]
-                nominations_t1 += [nomination]
-
-            nomination_sum = int(np.abs(sum(nominations_t1)))
-            n_entries = n_entries_exits - len(no.exits)
-            breaks = random.choices(range(0, nomination_sum + 1, 50),
-                                   k=n_entries - 1)
-            breaks.sort()
-            breaks = [0] + breaks + [nomination_sum]
-            nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
-                               for break_step in range(1, n_entries + 1)]
+            # for count, node in enumerate(no.exits):
+            #     try:
+            #         nomination = agent_decisions["exit_nom"]["X"][node]\
+            #             [(self._action_counter + 1) *
+            #              self._steps_per_agent_steps]
+            #     except KeyError:
+            #         nomination = nominations_t0[count]
+            #     nominations_t1 += [nomination]
+            #
+            # nomination_sum = int(np.abs(sum(nominations_t1)))
+            # n_entries = n_entries_exits - len(no.exits)
+            # breaks = random.choices(range(0, nomination_sum + 1, 50),
+            #                        k=n_entries - 1)
+            # breaks.sort()
+            # breaks = [0] + breaks + [nomination_sum]
+            # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+            #                    for break_step in range(1, n_entries + 1)]
         else:
             for count, node in enumerate(no.exits + co.special):
                 try:
@@ -550,7 +550,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         key = joiner(node)
                         nomination = agent_decisions["entry_nom"]["S"][key]\
                             [(self._action_counter + 1) *
-                             self._steps_per_agent_steps]
+                             self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
