@@ -500,6 +500,28 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         nominations_t1 = []
         if self._random_nominations:
+            # TODO: add random interchange of two scenarios
+            for count, node in enumerate(no.exits):
+                try:
+                    nomination = agent_decisions["exit_nom"]["X"][node] \
+                        [(self._action_counter + 1) *
+                         self._steps_per_agent_steps]
+                except KeyError:
+                    nomination = nominations_t0[count]
+                nominations_t1 += [nomination]
+
+            for count, node in enumerate(co.special):
+                key = joiner(node)
+                nomination = nominations_t0[n_exits + count]
+                if self._action_counter == 3:
+                    scenario = random.randint(0, 2)
+                    if scenario == 1:
+                        if "EN" in key:
+                            nomination += 50
+                        else:
+                            nomination -= 50
+                nominations_t1 += [nomination]
+
             for count, node in enumerate(no.exits):
                 try:
                     nomination = agent_decisions["exit_nom"]["X"][node]\
