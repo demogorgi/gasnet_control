@@ -540,13 +540,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
 
+            scenario = random.randint(0, 1)
             for count, node in enumerate(co.special):
                 key = joiner(node)
                 nomination = nominations_t0[n_exits + count]
                 if self._action_counter == 3:
-                    scenario = random.randint(0, 2)
                     if scenario == 1:
-                        if "EN" in key:
+                        if 'EN' in key:
                             nomination += 50
                         else:
                             nomination -= 50
