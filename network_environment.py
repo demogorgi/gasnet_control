@@ -34,8 +34,8 @@ obs_co = importlib.import_module(wd + ".observable_connections")
 
 class GasNetworkEnv(py_environment.PyEnvironment):
 
-    def __init__(self, discretization_steps=10, convert_action=True,
-                 steps_per_agent_step=8, max_agent_steps=1,
+    def __init__(self, action_epsilon=1.25, convert_action=True,
+                 steps_per_agent_step=1, max_agent_steps=1,
                  random_nominations=True, print_actions=False):
         ### define the action specificities
         self._convert_action = convert_action
@@ -60,12 +60,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         # overall minimum set to 0, maxima are the discretization step size for
         # others
-        self._discretization = discretization_steps
-        control_minima = [0]*n_control_vars
-        # upper resistor bounds [0, discretization] (in reality, [0, 100])
-        resistor_maxima = [discretization_steps]*n_resistors
-        compressor_maxima = [discretization_steps]*n_compressors
-        control_maxima = resistor_maxima + compressor_maxima
+        self._action_epsilon = action_epsilon
+        control_minima = [-1]*n_control_vars
+        control_maxima = [1]*n_control_vars
 
         # define the actual action spec
         if convert_action:
@@ -414,43 +411,53 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 if action_counter < n_resistors:
                     # resistor action has to be converted to discrete [0, 100]
                     resistor = self._resistors[action_counter]
-                    resis_value = 100/self._discretization * action
+                    resis_value = agent_decisions["zeta"]["RE"][resistor][
+                        step - 1]
+                    if action == 1:
+                        resis_value += self._action_epsilon
+                        resis_value = np.min([resis_value, 100.0])
+                    elif action == -1:
+                        resis_value -= self._action_epsilon
+                        resis_value = np.max([resis_value, 0.0])
                     agent_decisions["zeta"]["RE"][resistor][step] = resis_value
+
+                    if self._print_actions:
+                        print(f"resistor {resistor} works at efficiency"
+                              f" of {resis_value}")
                 else:
                     compressor_index = action_counter - n_resistors
                     compressor = self._compressors[compressor_index]
-                    if action > 10e-3:
+                    efficiency = agent_decisions["gas"]["CS"][compressor][
+                        step - 1]
+                    activation = agent_decisions["compressor"]["CS"][
+                        compressor][step - 1]
+                    if action == 1:
+                        if activation == 0:
+                            efficiency = 0.0
+                        else:
+                            efficiency += self._action_epsilon
+                            efficiency = np.min([efficiency, 100.0])
                         activation = 1
-                        efficiency = 1/self._discretization * action
-                    else:
-                        activation = 0
-                        efficiency = 0.0
+                    elif action == -1:
+                        if activation == 1:
+                            if efficiency == 0.0:
+                                activation = 0
+                            elif efficiency - self._action_epsilon < 0.0:
+                                efficiency = 0.0
+                            else:
+                                efficiency -= self._action_epsilon
+                        else:
+                            efficiency = 0.0
+                        
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
                     agent_decisions["compressor"]["CS"][compressor][step] = \
                         activation
 
-            # print the actions once for each agent step if desired
-            if self._print_actions:
-                if step % self._steps_per_agent_steps == 0:
-                    for action_counter, action in enumerate(action_list):
-                        if action_counter < n_resistors:
-                            resistor = self._resistors[action_counter]
-                            resis_value = 100 / self._discretization * action
-                            print(f"resistor {resistor} works at efficiency"
-                                  f" of {resis_value}")
-                        else:
-                            compressor_index = action_counter - n_resistors
-                            compressor = self._compressors[compressor_index]
-                            if action > 10e-3:
-                                activation = 1
-                                efficiency = 1 / self._discretization * action
-                            else:
-                                activation = 0
-                                efficiency = 0.0
-                            print(f"compressor {compressor} is "
-                                  f"{'' if activation == 1 else 'not '}"
-                                  f"activated"
-                                  f"{'' if activation == 0 else ' with efficiency ' + str(efficiency)}")
+                    if self._print_actions:
+                        print(f"compressor {compressor} is "
+                              f"{'' if activation == 1 else 'not '}"
+                              f"activated"
+                              f"{'' if activation == 0 else ' with efficiency ' + str(efficiency)}")
 
             solution = simulator_step(agent_decisions, step, "sim")
 
