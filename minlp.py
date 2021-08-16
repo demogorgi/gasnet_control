@@ -117,7 +117,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
             var_cont_slack = m.addVars(co.pipes, name=f"var_cont_slack_0")
         # ... and resistors
         vQr[tstep] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_{tstep}") #:= vm(l,r) * var_non_pipe_Qo[l,r] * rho / 3.6;
-        vQr_zm[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_zm_{tstep}")
+        vQr_zm[tstep - 1] = m.addVars(co.resistors, lb=0.7, ub=1.7, name=f"vQr_zm_{tstep}")
         vQr_p_aux[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_p_aux_{tstep}")
         vQr_v_rhs[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_rhs_{tstep}")
         vQr_v_lhs[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_lhs_{tstep}")
@@ -212,7 +212,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
     m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
     m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
     for tstep in range(1, numSteps):
-        m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
+        #m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
         m.addConstrs((vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] * var_node_p[tstep -1][r[1]] for r in co.resistors), name=f"vxQr_eq_two_{tstep}")
         m.addConstrs((vQr_v_rhs[tstep - 1][r] * vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] + var_node_p[tstep - 1][r[1]] for r in co.resistors), name=f"vxQr_eq_three_{tstep}")
         m.addConstrs((vQr_v_lhs[tstep - 1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[tstep - 1][r] * var_non_pipe_Qo[tstep -1][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_{tstep}")
