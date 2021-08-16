@@ -45,6 +45,11 @@ m.params.logfile = config['grb_logfile']
 m.setParam("NonConvex", 2)
 #m.setParam("NumericFocus", 1)
 m.setParam("Threads", 4)
+m.setParam("Heuristics", 0.75)
+#m.setParam("MIPFocus", 1) # instead of Heuristics
+output = path.join(sys.argv[1],'output')
+step_files_path = "".join([output, "/", config["name"]]).replace("\\", "/")
+m.write(step_files_path + ".lp")
 m.optimize()
 # get the model status
 status = m.status

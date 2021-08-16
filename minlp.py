@@ -111,7 +111,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         vQp[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_{tstep}") #:= ( vi(l,r) * var_pipe_Qo_in[l,r] + vo(l,r) * var_pipe_Qo_out[l,r] ) * rho / 3.6;
         vQp_vi[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vi_{tstep}")
         vQp_vo[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_vo_{tstep}")
-        vQp_zm[tstep] = m.addVars(co.pipes, lb=-GRB.INFINITY, name=f"vQp_zm_{tstep}")
+        vQp_zm[tstep] = m.addVars(co.pipes, lb=0.7, ub=1.7, name=f"vQp_zm_{tstep}")
         if tstep == 0:
             var_mom_slack = m.addVars(co.pipes, name=f"var_mom_slack_0")
             var_cont_slack = m.addVars(co.pipes, name=f"var_cont_slack_0")
@@ -182,9 +182,9 @@ def simulate(agent_decisions,compressors,dt,discretization):
                                      * rho / 3.6 * states[-1]["q_out"][p] / (b2p * states[-1]["p"][p[1]]))
                                     * var_pipe_Qo_out[0][p])
                   * rho / 3.6 for p in co.pipes), name=f'vxQp_{0}')
-    for tstep in range(numSteps):
+    #for tstep in range(numSteps):
         #m.addConstrs((vQp_zm[tstep][p] == zm(var_node_p[tstep][p[0]],var_node_p[tstep][p[1]]) for p in co.pipes), name=f'vxQp_zm_{tstep}')
-        m.addConstrs((vQp_zm[tstep][p] == zm(states[-1]["p"][p[0]], states[-1]["p"][p[1]]) for p in co.pipes), name=f"vxQp_zm_{tstep}")
+        #m.addConstrs((vQp_zm[tstep][p] == zm(states[-1]["p"][p[0]], states[-1]["p"][p[1]]) for p in co.pipes), name=f"vxQp_zm_{tstep}")
         #m.addConstrs((vQp_zm[tstep][p] == 0.5 * (
         #        1 - 3.52 * pr(p[0]) * exp(-2.26 * Tr(Tm)) + 0.274 * pr(p[0]) ** 2 * exp(-1.878 * Tr(Tm)) +
         #        1 - 3.52 * pr(p[1]) * exp(-2.26 * Tr(Tm)) + 0.274 * pr(p[1]) ** 2 * exp(-1.878 * Tr(Tm)))
