@@ -250,7 +250,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         return self._observation_spec
 
     def _reset(self):
-        # TODO: check functionality in learning
         # initialise the last actions taken
         self._last_resistances = [None]*len(self._resistors)
         self._last_compressor = [None]*len(self._compressors)
@@ -306,11 +305,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
-                            [self._steps_per_agent_steps]
+                            [config["nomination_freq"]]
                     else:
                         key = joiner(node)
                         nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps + self._entry_offset]
+                            [config["nomination_freq"] + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
@@ -319,11 +318,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
-                            [self._steps_per_agent_steps]
+                            [config["nomination_freq"]]
                     else:
                         key = joiner(node)
                         nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps + self._entry_offset]
+                            [config["nomination_freq"] + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
