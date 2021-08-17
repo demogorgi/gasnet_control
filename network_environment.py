@@ -251,7 +251,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         # counter to come to an end
         self._action_counter = 0
-        # set simulation_step counter in urmel to 0
+        # initialise dictionaries for the reward calculations
+        self._flow_violations = {}
+        self._pressure_violations = set()
 
     def action_spec(self):
         return self._action_spec
@@ -265,6 +267,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._last_resistances = [None]*len(self._resistors)
         self._last_compressor = [None]*len(self._compressors)
         self._last_gas = [None]*len(self._compressors)
+
+        # initialise dictionaries for the reward calculations
+        self._flow_violations = {}
+        self._pressure_violations = set()
 
         # extract initial decisions/values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
@@ -408,8 +414,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         agent_step_reward = 0
 
         step = 0
-        agent_step_flow_violation = {}
-        pressure_violations = set()
 
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
@@ -514,23 +518,52 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             if solution is None:
                 agent_step_reward = -1
                 self._episode_ended = True
-            # otherwise we calculate the reward as 1 - the weighted violations
-            # divided by the amount of simulation steps per agent step
-            else:
+            elif (self._action_counter + 1) % config["nomination_freq"] == 0:
                 # for norming the violations with their upper bound
                 ub_entry_violation = np.abs(int(np.sum(
                     current_entry_nominations
                 )))
 
+                # reward calculation between [-1, 1] after each nomination
+                # interval
+                # each flow violation has an impact of max 1/n_entries and
+                # is dependent on the accumulated flow violation
+                flow_violation = 0
+                for violation in self._flow_violations.values():
+                    flow_violation += min(
+                        np.abs(violation / (
+                                self._steps_per_agent_steps *
+                                ub_entry_violation
+                        )),
+                        1.0
+                    ) / n_entries
+
+                # a pressure violation is rated as critical -> if n = amount exits
+                # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
+                n_press_viol = len(self._pressure_violations)
+                pressure_violation = np.sum([2 ** (n_press_viol - i - 1) /
+                                             (2 ** n_press_viol - 1)
+                                             for i in range(n_press_viol)])
+                if not self._episode_ended:
+                    agent_step_reward = 1.0 - (
+                                pressure_violation + flow_violation)
+                    with open("rewardfile.csv", "a+") as rewardcsv:
+                        rewardcsv.write(str(agent_step_reward) + ";")
+
+                self._flow_violations = {}
+                self._pressure_violations = set()
+            # otherwise we calculate the reward as 1 - the weighted violations
+            # divided by the amount of simulation steps per agent step
+            else:
                 # iterate through variables to identify entries and exits
                 for variable_name in solution.keys():
                     # deviations from entry flows have to be summed up for each
                     if variable_name.startswith("nom_entry_slack_DA"):
                         # sum up pressure violations for each entry over one
                         # agent  step (may cancel out and is intended)
-                        if variable_name not in agent_step_flow_violation:
-                            agent_step_flow_violation[variable_name] = 0
-                        agent_step_flow_violation[variable_name] += \
+                        if variable_name not in self._flow_violations:
+                            self._flow_violations[variable_name] = 0
+                        self._flow_violations[variable_name] += \
                             solution[variable_name]
 
                     # count deviations from exit pressures to be penalized
@@ -544,42 +577,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                 violated_exit = variable_name.split("[")[1]
                                 violated_exit = violated_exit.split("]")[0]
                                 # mark violations via appendix to set
-                                pressure_violations.add(violated_exit)
+                                self._pressure_violations.add(violated_exit)
 
-            if self._episode_ended:
-                break
+                agent_step_reward = 0
 
-        # reward calculation between [-1, 1]
-        # each flow violation has an impact of max 1/n_entries and is dependent
-        # on the accumulated flow violation
-        flow_violation = 0
-        for violation in agent_step_flow_violation.values():
-            flow_violation += min(
-                np.abs(violation/(
-                        self._steps_per_agent_steps *
-                        ub_entry_violation
-                        )),
-                1.0
-                )/n_entries
-
-        # a pressure violation is rated as critical -> if n = amount exits
-        # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
-        n_press_viol = len(pressure_violations)
-        pressure_violation = np.sum([2**(n_press_viol - i - 1) /
-                                     (2**n_press_viol - 1)
-                                     for i in range(n_press_viol)])
-        if not self._episode_ended:
-            agent_step_reward = 1.0 - (pressure_violation + flow_violation)
-            with open("rewardfile.csv", "a+") as rewardcsv:
-                rewardcsv.write(str(agent_step_reward) + ";")
-        if self._print_actions:
-            print(f"This step lead to a reward of {agent_step_reward}")
-            print(f"The accumulated flow violations are at "
-                  f"{agent_step_flow_violation}")
-            print(f"The summed up pressure violations are "
-                  f"{pressure_violation}")
-            print(f"The nominations for the current step were "
-                  f"{self._state[:n_entries_exits]}")
         # extract the nominations for updating the state
         nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
 
