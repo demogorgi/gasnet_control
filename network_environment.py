@@ -91,6 +91,12 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 maximum=np.array(control_maxima),
                 name='action'
             )
+
+        # initialise the last actions taken
+        self._last_resistances = [None]*n_resistors
+        self._last_compressor = [None]*n_compressors
+        self._last_gas = [None]*n_compressors
+
         ### define the observations specificities
         ## extract the nominations
         entries_exits_list = obs_no.nodes_with_bds
@@ -255,6 +261,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def _reset(self):
         # TODO: check functionality in learning
+        # initialise the last actions taken
+        self._last_resistances = [None]*len(self._resistors)
+        self._last_compressor = [None]*len(self._compressors)
+        self._last_gas = [None]*len(self._compressors)
+
         # extract initial decisions/values
         with open(path.join(data_path, 'init_decisions.yml')) as init_file:
             init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
@@ -411,8 +422,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 if action_counter < n_resistors:
                     # resistor action has to be converted to discrete [0, 100]
                     resistor = self._resistors[action_counter]
-                    resis_value = agent_decisions["zeta"]["RE"][resistor][
-                        step - 1]
+                    if step > 0:
+                        resis_value = self._last_resistances[action_counter]
+                    else:
+                        resis_value = agent_decisions["zeta"]["RE"][resistor][
+                            step - 1]
                     if action == 1:
                         resis_value += self._action_epsilon
                         resis_value = np.min([resis_value, 100.0])
@@ -420,6 +434,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         resis_value -= self._action_epsilon
                         resis_value = np.max([resis_value, 0.0])
                     agent_decisions["zeta"]["RE"][resistor][step] = resis_value
+                    self._last_resistances[action_counter] = resis_value
 
                     if self._print_actions:
                         print(f"resistor {resistor} works at efficiency"
@@ -427,10 +442,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 else:
                     compressor_index = action_counter - n_resistors
                     compressor = self._compressors[compressor_index]
-                    efficiency = agent_decisions["gas"]["CS"][compressor][
-                        step - 1]
-                    activation = agent_decisions["compressor"]["CS"][
-                        compressor][step - 1]
+                    if step > 0:
+                        efficiency = self._last_gas[compressor_index]
+                        activation = self._last_compressor[compressor_index]
+                    else:
+                        efficiency = agent_decisions["gas"]["CS"][compressor][
+                            step - 1]
+                        activation = agent_decisions["compressor"]["CS"][
+                            compressor][step - 1]
                     if action == 1:
                         if activation == 0:
                             efficiency = 0.0
@@ -452,6 +471,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
                     agent_decisions["compressor"]["CS"][compressor][step] = \
                         activation
+                    self._last_gas[compressor_index] = efficiency
+                    self._last_compressor[compressor_index] = activation
 
                     if self._print_actions:
                         print(f"compressor {compressor} is "
@@ -459,6 +480,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                               f"activated"
                               f"{'' if activation == 0 else ' with efficiency ' + str(efficiency)}")
 
+            # simulate the next step
             solution = simulator_step(agent_decisions, step, "sim")
 
             # if the resulting problem is infeasible we reward -1 for the whole
