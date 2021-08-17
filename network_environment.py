@@ -501,44 +501,6 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         if solution is None:
             agent_step_reward = -1
             self._episode_ended = True
-        # reward is calculated after one nomination frequency cycle
-        elif (step + 1) % config["nomination_freq"] == 0:
-            # for norming the violations with their upper bound
-            ub_entry_violation = np.abs(int(np.sum(
-                current_entry_nominations
-            )))
-
-            # reward calculation between [-1, 1] after each nomination
-            # interval
-            # each flow violation has an impact of max 1/n_entries and
-            # is dependent on the accumulated flow violation
-            flow_violation = 0
-            for violation in self._flow_violations.values():
-                flow_violation += min(
-                    np.abs(violation / (
-                            self._steps_per_agent_steps *
-                            ub_entry_violation
-                    )),
-                    1.0
-                ) / n_entries
-
-            # a pressure violation is rated as critical -> if n = amount exits
-            # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
-            n_press_viol = len(self._pressure_violations)
-            pressure_violation = np.sum([2 ** (n_press_viol - i - 1) /
-                                         (2 ** n_press_viol - 1)
-                                         for i in range(n_press_viol)])
-            if not self._episode_ended:
-                agent_step_reward = 1.0 - (
-                            pressure_violation + flow_violation)
-                with open("rewardfile.csv", "a+") as rewardcsv:
-                    rewardcsv.write(str(agent_step_reward) + ";")
-
-            self._flow_violations = {}
-            self._pressure_violations = set()
-        # otherwise we calculate the reward as 1 - the weighted violations
-        # divided by the amount of simulation steps per agent step
-
         # save the violations in the current nomination cycle
         else:
             # iterate through variables to identify entries and exits
@@ -565,8 +527,43 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             # mark violations via appendix to set
                             self._pressure_violations.add(violated_exit)
 
-        # end of nomination cycle -> update nominations
+        # end of nomination cycle -> update nominations and reward calculation
         if (step + 1) % config["nomination_freq"] == 0:
+            ## calculate the reward for the current cycle
+            # for norming the violations with their upper bound
+            ub_entry_violation = np.abs(int(np.sum(
+                current_entry_nominations
+            )))
+
+            # reward calculation between [-1, 1] after each nomination cycle.
+            # each flow violation has an impact of max 1/n_entries and
+            # is dependent on the accumulated flow violation
+            flow_violation = 0
+            for violation in self._flow_violations.values():
+                flow_violation += min(
+                    np.abs(violation / (
+                            config["nomination_freq"] *
+                            ub_entry_violation
+                    )),
+                    1.0
+                ) / n_entries
+
+            # a pressure violation is rated as critical -> if n = amount exits
+            # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
+            n_press_viol = len(self._pressure_violations)
+            pressure_violation = np.sum([2 ** (n_press_viol - i - 1) /
+                                         (2 ** n_press_viol - 1)
+                                         for i in range(n_press_viol)])
+            if not self._episode_ended:
+                agent_step_reward = 1.0 - (
+                        pressure_violation + flow_violation)
+                with open("rewardfile.csv", "a+") as rewardcsv:
+                    rewardcsv.write(str(agent_step_reward) + ";")
+
+            self._flow_violations = {}
+            self._pressure_violations = set()
+
+            ## update the nominations
             # extract the nominations for updating the state
             nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
 

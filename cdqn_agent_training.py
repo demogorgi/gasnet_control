@@ -171,12 +171,12 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 80 # @param {type:"integer"}
+    max_agent_steps = 16 # @param {type:"integer"}
     steps_per_agent_step = 1    # @param {type:"integer"}
     action_epsilon = 5 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
-    random_entry_nominations = True   # @param {type:"boolean"}
+    random_entry_nominations = False   # @param {type:"boolean"}
 
     show_plot = in_show_plot
 
