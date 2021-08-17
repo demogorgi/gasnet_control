@@ -42,7 +42,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._steps_per_agent_steps = steps_per_agent_step
         self._max_agent_steps = max_agent_steps
         self._random_nominations = random_nominations
-        self._entry_offset = self._steps_per_agent_steps * (-2)
+        self._entry_offset = -16
         self._print_actions = print_actions
 
         # analyse initial decisions to extract values

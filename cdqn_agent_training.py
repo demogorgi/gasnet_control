@@ -171,9 +171,9 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 10 # @param {type:"integer"}
-    steps_per_agent_step = 8    # @param {type:"integer"}
-    discretization = 10 # @param {type:"integer"}
+    max_agent_steps = 80 # @param {type:"integer"}
+    steps_per_agent_step = 1    # @param {type:"integer"}
+    action_epsilon = 10/8 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
     random_entry_nominations = True   # @param {type:"boolean"}
@@ -182,13 +182,13 @@ def cdqn_agent_training(
 
     ########## TRAINING SECTION ##########
     train_py_env = network_environment. \
-        GasNetworkEnv(discretization_steps=discretization,
+        GasNetworkEnv(action_epsilon=action_epsilon,
                       convert_action=convert_action,
                       steps_per_agent_step=steps_per_agent_step,
                       max_agent_steps=max_agent_steps,
                       random_nominations=random_entry_nominations)
     eval_py_env = network_environment. \
-        GasNetworkEnv(discretization_steps=discretization,
+        GasNetworkEnv(action_epsilon=action_epsilon,
                       convert_action=convert_action,
                       steps_per_agent_step=steps_per_agent_step,
                       max_agent_steps=max_agent_steps,
