@@ -414,66 +414,92 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         for small_step in range(self._steps_per_agent_steps):
             step = big_step * self._steps_per_agent_steps + small_step
             # apply the actions; first fix valves to 1 ( = open)
-            # then apply the resistors, then compressors
+            # then apply the resistor actions, then compressor actions
+
+            # fix the valves to open
             for valve_counter in range(n_valves):
                 valve = self._valves[valve_counter]
                 agent_decisions["va"]["VA"][valve][step] = 1
+            # handle agent actions related to resistors and compressors
             for action_counter, action in enumerate(action_list):
+                # resistors are topologically sorted first
                 if action_counter < n_resistors:
-                    # resistor action has to be converted to discrete [0, 100]
+                    # get resistor name and value of previous time step
                     resistor = self._resistors[action_counter]
                     if step > 0:
                         resis_value = self._last_resistances[action_counter]
+                    # the initial resistor values are saved in initial decs
                     else:
                         resis_value = agent_decisions["zeta"]["RE"][resistor][
                             step - 1]
+
+                    # action = 1 -> increase the resistor value by epsilon
+                    # max: 100
                     if action == 1:
                         resis_value += self._action_epsilon
                         resis_value = np.min([resis_value, 100.0])
+                    # action = -1 -> decrease the resistor value by epsilon
+                    # min: 0
                     elif action == -1:
                         resis_value -= self._action_epsilon
                         resis_value = np.max([resis_value, 0.0])
+
+                    # save the value in decisions for simulation and next step
                     agent_decisions["zeta"]["RE"][resistor][step] = resis_value
                     self._last_resistances[action_counter] = resis_value
 
+                    # for debugging and manual usage printing might be good
                     if self._print_actions:
                         print(f"resistor {resistor} works at efficiency"
                               f" of {resis_value}")
                 else:
+                    # get index, name and last values for current compressor
                     compressor_index = action_counter - n_resistors
                     compressor = self._compressors[compressor_index]
                     if step > 0:
                         efficiency = self._last_gas[compressor_index]
                         activation = self._last_compressor[compressor_index]
+                    # initial values from yaml file
                     else:
                         efficiency = agent_decisions["gas"]["CS"][compressor][
                             step - 1]
                         activation = agent_decisions["compressor"]["CS"][
                             compressor][step - 1]
+
+                    # action = 1 -> increase compressor value by epsilon
                     if action == 1:
+                        # if compressor was off -> idle mode(0 gas, but active)
                         if activation == 0:
                             efficiency = 0.0
                         else:
                             efficiency += self._action_epsilon/100
                             efficiency = np.min([efficiency, 100.0])
                         activation = 1
+                    # action = -1 -> decrease compressor value by epsilon
                     elif action == -1:
                         if activation == 1:
+                            # if compressor was in idle mode -> turn off
                             if efficiency == 0.0:
                                 activation = 0
+                            # if compressor did actively work on minimal
+                            # positive level before -> idle mode
                             elif efficiency - self._action_epsilon/100 < 0.0:
                                 efficiency = 0.0
+                            # otherwise just reduce the gas value
                             else:
                                 efficiency -= self._action_epsilon/100
+                        # if compressor was turned off before -> nothing
                         else:
                             efficiency = 0.0
-                        
+
+                    # save the value in decisions for simulation and next step
                     agent_decisions["gas"]["CS"][compressor][step] = efficiency
                     agent_decisions["compressor"]["CS"][compressor][step] = \
                         activation
                     self._last_gas[compressor_index] = efficiency
                     self._last_compressor[compressor_index] = activation
 
+                    # for debugging and manual usage printing might be good
                     if self._print_actions:
                         print(f"compressor {compressor} is "
                               f"{'' if activation == 1 else 'not '}"
