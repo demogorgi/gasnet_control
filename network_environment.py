@@ -566,7 +566,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             self._pressure_violations.add(violated_exit)
 
         # end of nomination cycle -> update nominations
-        if (step + 1) % config["nomination_freq"]:
+        if (step + 1) % config["nomination_freq"] == 0:
             # extract the nominations for updating the state
             nominations_t0 = self._state[n_entries_exits:2*n_entries_exits]
 
