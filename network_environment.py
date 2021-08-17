@@ -435,17 +435,17 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         if activation == 0:
                             efficiency = 0.0
                         else:
-                            efficiency += self._action_epsilon
+                            efficiency += self._action_epsilon/100
                             efficiency = np.min([efficiency, 100.0])
                         activation = 1
                     elif action == -1:
                         if activation == 1:
                             if efficiency == 0.0:
                                 activation = 0
-                            elif efficiency - self._action_epsilon < 0.0:
+                            elif efficiency - self._action_epsilon/100 < 0.0:
                                 efficiency = 0.0
                             else:
-                                efficiency -= self._action_epsilon
+                                efficiency -= self._action_epsilon/100
                         else:
                             efficiency = 0.0
                         
