@@ -656,10 +656,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                for non_pipe in self._non_pipes]
 
         # update the state
-        self._state = np.array(
-            list(nominations_t0) + nominations_t1 + node_pressures +
-            pipe_inflows + non_pipe_values
-            , np.float32)
+        self._state = np.array(list(nominations_t0) + list(nominations_t1) +
+                               node_pressures + pipe_inflows + non_pipe_values,
+                               np.float32)
 
         # increase the action counter
         self._action_counter += 1
