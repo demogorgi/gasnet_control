@@ -27,7 +27,7 @@ from tf_agents.utils import common
 import network_environment
 
 # hyper-parameters
-on_cluster = False
+on_cluster = True
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
@@ -96,7 +96,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [1_000_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
@@ -176,7 +176,7 @@ def cdqn_agent_training(
     discretization = 10 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
-    random_entry_nominations = False   # @param {type:"boolean"}
+    random_entry_nominations = True   # @param {type:"boolean"}
 
     show_plot = in_show_plot
 
