@@ -24,7 +24,12 @@ contour_output: True
 nomination_freq: 8
 # controlling random nomination values [start(opt),stop,step(opt)]
 randrange: [0,1101,50]
-# upper bound for the nomination scenario if not completely random
-upper_nom: 450
-# lower bound for the nomination scenario if not completely random
-lower_nom: 350
+# upper bound for the nomination of EN if scenario not completely random
+upper_nom_EN: 450
+# lower bound for the nomination of EN if scenario not completely random
+lower_nom_EN: 350
+# upper bound for the nomination of EH if scenario not completely random
+upper_nom_EH: 750
+# lower bound for the nomination of EH if scenario not completely random
+lower_nom_EH: 650
+
