@@ -544,17 +544,36 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             for count, node in enumerate(co.special):
                 key = joiner(node)
                 nomination = nominations_t0[n_exits + count]
-                if self._action_counter == 3:
-                    if scenario == 1:
-                        if 'EN' in key:
-                            nomination += 50
-                        else:
+                # if ((('EN' in key and nomination == config["upper_nom_EN"]) or
+                #     ('EH' in key and nomination == config["upper_nom_EH"]))
+                #         and scenario == 0):
+                #     nomination -= 50
+                # at EN we can reach the upper/lower nomination bound
+                if 'EN' in key:
+                    if nomination == config["upper_nom_EN"]:
+                        if scenario == 0:
                             nomination -= 50
-                    elif scenario == 2:
-                        if 'EN' in key:
-                            nomination -= 50
-                        else:
+                    elif nomination == config["lower_nom_EN"]:
+                        if scenario == 0:
                             nomination += 50
+                    else:
+                        if scenario == 1:
+                            nomination += 50
+                        elif scenario == 2:
+                            nomination -= 50
+                else:
+                    if nomination == config["upper_nom_EH"]:
+                        if scenario == 0:
+                            nomination -= 50
+                    elif nomination == config["lower_nom_EH"]:
+                        if scenario == 0:
+                            nomination += 50
+                    else:
+                        if scenario == 1:
+                            nomination -= 50
+                        elif scenario == 2:
+                            nomination += 50
+
                 nominations_t1 += [nomination]
 
             # for count, node in enumerate(no.exits):
