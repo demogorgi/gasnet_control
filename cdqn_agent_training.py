@@ -382,6 +382,7 @@ def cdqn_agent_training(
     iterations = range(0, num_iterations + 1, eval_interval)
     plt.figure()
     plt.plot(iterations, returns)
+    plt.hlines(9.5, iterations[0], iterations[-1], 'r')
     plt.xlabel('Iterations')
     plt.ylabel('Average Return')
     if on_cluster:
