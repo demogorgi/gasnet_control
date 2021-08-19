@@ -171,9 +171,9 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 40 # @param {type:"integer"}
+    max_agent_steps = 80 # @param {type:"integer"}
     steps_per_agent_step = 1    # @param {type:"integer"}
-    action_epsilon = 5 # @param {type:"integer"}
+    action_epsilon = 7.5 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
     random_entry_nominations = False   # @param {type:"boolean"}
@@ -440,7 +440,7 @@ for iterations in in_num_iterations_options:
                         in_boltzmann_temperatur=0.0,
                         in_target_update_steps=target_update,
                         in_gradient_clipping=gradient,
-                        in_show_plot=True
+                        in_show_plot=False
                     )
                 for temp in in_boltzmann_temperatures:
                     cdqn_agent_training(
