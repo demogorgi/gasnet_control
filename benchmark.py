@@ -367,7 +367,7 @@ decision, decisions_as_yaml = get_benchmark(
     n_episodes=amount_episodes,
     flow_variant=flow_calc_for_benchmark,
     rounded_decimal=1,
-    enable_idle_compressor=False
+    enable_idle_compressor=True
 )
 
 # write the decisions into a separate yml file if wanted
