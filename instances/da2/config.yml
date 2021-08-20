@@ -25,11 +25,11 @@ nomination_freq: 8
 # controlling random nomination values [start(opt),stop,step(opt)]
 randrange: [0,1101,50]
 # upper bound for the nomination of EH if scenario not completely random
-upper_nom_EH: 450
+upper_nom_EH: 550
 # lower bound for the nomination of EH if scenario not completely random
-lower_nom_EH: 350
+lower_nom_EH: 250
 # upper bound for the nomination of EN if scenario not completely random
-upper_nom_EN: 750
+upper_nom_EN: 850
 # lower bound for the nomination of EN if scenario not completely random
-lower_nom_EN: 650
+lower_nom_EN: 550
 
