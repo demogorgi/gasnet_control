@@ -26,7 +26,7 @@ if __name__ == '__main__':
         use_cdqn = True
     else:
         use_cdqn = False
-    drop_path = destination_path + "cdqn_scripts_allreduced_350-450tube/"
+    drop_path = destination_path + "cdqn_scripts_allreduced_250-550tube/"
     try:
         os.makedirs(drop_path)
     except FileExistsError:
