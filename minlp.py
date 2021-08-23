@@ -122,7 +122,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         vQr_v_rhs[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_rhs_{tstep}")
         vQr_v_lhs[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_lhs_{tstep}")
         vQr_v_arg[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_arg_{tstep}")
-        vQr_v_max[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_max_{tstep}")
+        #vQr_v_max[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_max_{tstep}")
         if tstep == 0:
             var_resis_slack = m.addVars(co.resistors, name=f"var_resis_slack_0")
 
@@ -209,16 +209,20 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
     m.addConstrs((vQr_v_arg[-1][r] == (rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * zm(states[-1]["p"][r[0]], states[-1]["p"][r[1]]) * states[-1]["q"][r] / b2p) * (states[-1]["p"][r[0]] + states[-1]["p"][r[1]])/(states[-1]["p"][r[0]] * states[-1]["p"][r[1]]) for r in co.resistors), name=f"vxQr_eq_five_0")
-    m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
-    m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
+    #m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
+    m.addConstrs((vQr_v_arg[-1][r] <= 2 for r in co.resistors), name=f"vxQr_eq_six_0")
+    #m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
+    m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_arg[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
     for tstep in range(1, numSteps):
         #m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
         m.addConstrs((vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] * var_node_p[tstep -1][r[1]] for r in co.resistors), name=f"vxQr_eq_two_{tstep}")
         m.addConstrs((vQr_v_rhs[tstep - 1][r] * vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] + var_node_p[tstep - 1][r[1]] for r in co.resistors), name=f"vxQr_eq_three_{tstep}")
         m.addConstrs((vQr_v_lhs[tstep - 1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[tstep - 1][r] * var_non_pipe_Qo[tstep -1][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_{tstep}")
         m.addConstrs((vQr_v_arg[tstep - 1][r] == vQr_v_lhs[tstep - 1][r] * vQr_v_rhs[tstep - 1][r] for r in co.resistors), name=f"vxQr_eq_five_{tstep}")
-        m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_arg[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
-        m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_max[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
+        #m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_arg[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
+        m.addConstrs((vQr_v_arg[tstep - 1][r] <= 2 for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
+        #m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_max[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
+        m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_arg[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
         # original constraint:
         # vQr[r] == vm(t,*r) * var_non_pipe_Qo[r] * rho / 3.6
         # vm(t,i,o) =  max(rho / 3.6 * ( rtza(t,i,o) * q_old(t,(i,o)) ) / 2 * 1 / b2p * ( 1 / p_old(t,i) + 1 / p_old(t,o) ), 2)
