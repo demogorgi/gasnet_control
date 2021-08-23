@@ -316,17 +316,23 @@ def simulate(agent_decisions,compressors,dt,discretization):
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf
     #
     m.addConstrs((var_non_pipe_Qo[0][cs] >= 0 for cs in co.compressors), name='compressor_eq_one_0')
-    #m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-1]["p"][cs[0]] * comp_phi_new[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
+    m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-1]["p"][cs[0]] * comp_phi[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
     #m.addConstrs(( (compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[0][cs] +
     #               compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
     #               for cs in co.compressors), name=f"compressor_eq_three_0")
     m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi[0][cs] * states[-1]["p"][cs[0]] +
                   compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
-                  for cs in co.compressors), name=f"compressor_eq_two_0")
+                  for cs in co.compressors), name=f"compressor_eq_three_0")
+    #m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_i[0][cs] * states[-1]["p"][cs[0]] +
+    #              compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
+    #              for cs in co.compressors), name=f"compressor_eq_three_0")
+
     #m.addConstrs((comp_phi_frac[0][cs] * comp_phi[0][cs] == states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_four_0")
     #m.addConstrs((comp_phi_new[0][cs] == comp_phi[0][cs] * compressor_DA[0][cs] for cs in co.compressors), name=f"compressor_eq_five_0")
     m.addConstrs((comp_phi[0][cs] == gp.min_(comp_phi_aux[0][cs], compressors[joiner(cs)]["phi_max"]) for cs in co.compressors), name=f"compressor_eq_six_0")
+    #m.addConstrs((comp_i[0][cs] <= compressors[joiner(cs)]["phi_max"] for cs in co.compressors), name=f"compressor_eq_six_0")
     m.addConstrs((comp_phi_aux[0][cs] == gp.max_(comp_i[0][cs], compressors[joiner(cs)]["phi_min"]) for cs in co.compressors), name=f"compressor_eq_seven_0")
+    #m.addConstrs((comp_i[0][cs] >= compressors[joiner(cs)]["phi_min"] for cs in co.compressors), name=f"compressor_eq_seven_0")
     # pressure frac equation for further time steps
     #m.addConstrs((comp_gas_aux[0][cs] == gas_DA[0][cs] * states[-1]["p"][cs[0]] for cs in co.compressors), name=f"compressor_eq_nine_0")
     m.addConstrs((comp_i[0][cs] == compressors[joiner(cs)]["phi_MIN"]/((-compressors[joiner(cs)]["p_in_max"] + compressors[joiner(cs)]["p_in_min"]) * compressors[joiner(cs)]["pi_MIN"]) *
@@ -344,14 +350,14 @@ def simulate(agent_decisions,compressors,dt,discretization):
     for tstep in range(1, numSteps):
         m.addConstrs((var_non_pipe_Qo[tstep][cs] >= 0 for cs in co.compressors), name=f'compressor_eq_one_{tstep}')
         #m.addConstrs((var_non_pipe_Qo[tstep][cs] == compressor_DA[tstep][cs] * 3.6 * var_node_p[tstep - 1][cs[0]] * phi_new(compressor_DA[tstep][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"],gas_DA[tstep][cs],var_node_p[tstep - 1][cs[0]],var_node_p[tstep - 1][cs[1]]) for cs in co.compressors), name=f'compressor_eq_two_{tstep}')
-        #m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * var_node_p[tstep -1][cs[0]] * comp_phi_new[tstep][cs] for cs in co.compressors),
-        #             name=f'compressor_eq_two_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][cs] == 3.6 * var_node_p[tstep -1][cs[0]] * comp_phi[tstep][cs] for cs in co.compressors),
+                     name=f'compressor_eq_two_{tstep}')
         #m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[tstep][cs] +
         #              compressors[joiner(cs)]["pi_2"] * var_node_p[tstep - 1][cs[0]] - var_node_p[tstep - 1][cs[1]] + 1000 >= 1000 * compressor_DA[tstep][cs]
         #              for cs in co.compressors), name=f"compressor_eq_three_{0}")
         m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi[tstep][cs] * var_node_p[tstep - 1][cs[0]] +
                       compressors[joiner(cs)]["pi_2"] * var_node_p[tstep - 1][cs[0]] - var_node_p[tstep - 1][cs[1]] + 1000 >= 1000 * compressor_DA[tstep//config["nomination_freq"]][cs]
-                      for cs in co.compressors), name=f"compressor_eq_two_{tstep}")
+                      for cs in co.compressors), name=f"compressor_eq_three_{tstep}")
         #m.addConstrs((comp_phi_frac[tstep][cs] * comp_phi[tstep][cs] == var_node_p[tstep - 1][cs[0]] for cs in co.compressors), name=f"compressor_eq_four_{tstep}")
         #m.addConstrs((comp_phi_new[tstep][cs] == comp_phi[tstep][cs] * compressor_DA[tstep][cs] for cs in co.compressors), name=f"compressor_eq_five_{tstep}")
         m.addConstrs((comp_phi[tstep][cs] == gp.min_(comp_phi_aux[tstep][cs], compressors[joiner(cs)]["phi_max"]) for cs in co.compressors), name=f"compressor_eq_six_{tstep}")
