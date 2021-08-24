@@ -122,7 +122,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         vQr_v_rhs[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_rhs_{tstep}")
         vQr_v_lhs[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_lhs_{tstep}")
         vQr_v_arg[tstep - 1] = m.addVars(co.resistors, lb=-GRB.INFINITY, name=f"vQr_v_arg_{tstep}")
-        #vQr_v_max[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_max_{tstep}")
+        vQr_v_max[tstep - 1] = m.addVars(co.resistors, name=f"vQr_v_max_{tstep}")
         if tstep == 0:
             var_resis_slack = m.addVars(co.resistors, name=f"var_resis_slack_0")
 
@@ -209,10 +209,10 @@ def simulate(agent_decisions,compressors,dt,discretization):
         # (the obvious 'divided by two' is carried out in the function xip (in fuctions.py) according to eqn. 18 in the Station_Model_Paper.pdf (docs))
     # ... and resistors
     m.addConstrs((vQr_v_arg[-1][r] == (rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * zm(states[-1]["p"][r[0]], states[-1]["p"][r[1]]) * states[-1]["q"][r] / b2p) * (states[-1]["p"][r[0]] + states[-1]["p"][r[1]])/(states[-1]["p"][r[0]] * states[-1]["p"][r[1]]) for r in co.resistors), name=f"vxQr_eq_five_0")
-    #m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
-    m.addConstrs((vQr_v_arg[-1][r] <= 2 for r in co.resistors), name=f"vxQr_eq_six_0")
-    #m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
-    m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_arg[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
+    m.addConstrs((vQr_v_max[-1][r] == gp.max_(vQr_v_arg[-1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_0")
+    #m.addConstrs((2 <= vQr_v_arg[-1][r] for r in co.resistors), name=f"vxQr_eq_six_0")
+    m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_max[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
+    #m.addConstrs((vQr[0][r] == rho / 3.6 * vQr_v_arg[-1][r] * var_non_pipe_Qo[0][r] for r in co.resistors), name=f"vxQr_eq_seven_0")
     for tstep in range(1, numSteps):
         #m.addConstrs((vQr_zm[tstep - 1][r] == zm(var_node_p[tstep - 1][r[0]], var_node_p[tstep - 1][r[1]]) for r in co.resistors), name=f"vxQr_eq_one_{tstep}")
         m.addConstrs((vQr_p_aux[tstep - 1][r] == var_node_p[tstep - 1][r[0]] * var_node_p[tstep -1][r[1]] for r in co.resistors), name=f"vxQr_eq_two_{tstep}")
@@ -220,7 +220,7 @@ def simulate(agent_decisions,compressors,dt,discretization):
         m.addConstrs((vQr_v_lhs[tstep - 1][r] == rho / 3.6 / 2 * Rs * Tm / A(co.diameter[r]) * vQr_zm[tstep - 1][r] * var_non_pipe_Qo[tstep -1][r] / b2p for r in co.resistors), name=f"vxQr_eq_four_{tstep}")
         m.addConstrs((vQr_v_arg[tstep - 1][r] == vQr_v_lhs[tstep - 1][r] * vQr_v_rhs[tstep - 1][r] for r in co.resistors), name=f"vxQr_eq_five_{tstep}")
         #m.addConstrs((vQr_v_max[tstep - 1][r] == gp.max_(vQr_v_arg[tstep - 1][r], 2) for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
-        m.addConstrs((vQr_v_arg[tstep - 1][r] <= 2 for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
+        m.addConstrs((2 <= vQr_v_arg[tstep - 1][r] for r in co.resistors), name=f"vxQr_eq_six_{tstep}")
         #m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_max[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
         m.addConstrs((vQr[tstep][r] == rho / 3.6 * vQr_v_arg[tstep - 1][r] * var_non_pipe_Qo[tstep][r] for r in co.resistors), name=f"vxQr_eq_seven_{tstep}")
         # original constraint:
@@ -316,7 +316,8 @@ def simulate(agent_decisions,compressors,dt,discretization):
     # Suggested by Klaus and described in gasnet_control/docs/Verdichterregeln.txt and gasnet_control/docs/Example_Compressor_Wheel_Map.pdf
     #
     m.addConstrs((var_non_pipe_Qo[0][cs] >= 0 for cs in co.compressors), name='compressor_eq_one_0')
-    m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-1]["p"][cs[0]] * comp_i[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
+    #m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * states[-1]["p"][cs[0]] * comp_i[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
+    m.addConstrs((var_non_pipe_Qo[0][cs] == 3.6 * compressor_DA[0][cs] * comp_i[0][cs] for cs in co.compressors), name=f'compressor_eq_two_{0}')
     #m.addConstrs(( (compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[0][cs] +
     #               compressors[joiner(cs)]["pi_2"] * states[-1]["p"][cs[0]] - states[-1]["p"][cs[1]] + 1000 >= 1000 * compressor_DA[0][cs]
     #               for cs in co.compressors), name=f"compressor_eq_three_0")
@@ -350,7 +351,9 @@ def simulate(agent_decisions,compressors,dt,discretization):
     for tstep in range(1, numSteps):
         m.addConstrs((var_non_pipe_Qo[tstep][cs] >= 0 for cs in co.compressors), name=f'compressor_eq_one_{tstep}')
         #m.addConstrs((var_non_pipe_Qo[tstep][cs] == compressor_DA[tstep][cs] * 3.6 * var_node_p[tstep - 1][cs[0]] * phi_new(compressor_DA[tstep][cs],compressors[joiner(cs)]["phi_min"],compressors[joiner(cs)]["phi_max"],compressors[joiner(cs)]["pi_1"],compressors[joiner(cs)]["pi_2"],compressors[joiner(cs)]["pi_MIN"],compressors[joiner(cs)]["phi_MIN"],compressors[joiner(cs)]["p_in_min"],compressors[joiner(cs)]["p_in_max"],compressors[joiner(cs)]["pi_MAX"],compressors[joiner(cs)]["eta"],gas_DA[tstep][cs],var_node_p[tstep - 1][cs[0]],var_node_p[tstep - 1][cs[1]]) for cs in co.compressors), name=f'compressor_eq_two_{tstep}')
-        m.addConstrs((var_non_pipe_Qo[tstep][cs] == 3.6 * var_node_p[tstep -1][cs[0]] * comp_i[tstep][cs] for cs in co.compressors),
+        #m.addConstrs((var_non_pipe_Qo[tstep][cs] == 3.6 * var_node_p[tstep -1][cs[0]] * comp_i[tstep][cs] for cs in co.compressors),
+        #             name=f'compressor_eq_two_{tstep}')
+        m.addConstrs((var_non_pipe_Qo[tstep][cs] == 3.6 * compressor_DA[tstep//config["nomination_freq"]][cs] * comp_i[tstep][cs] for cs in co.compressors),
                      name=f'compressor_eq_two_{tstep}')
         #m.addConstrs(((compressors[joiner(cs)]["pi_1"] - compressors[joiner(cs)]["pi_2"]) / compressors[joiner(cs)]["phi_max"] * comp_phi_frac[tstep][cs] +
         #              compressors[joiner(cs)]["pi_2"] * var_node_p[tstep - 1][cs[0]] - var_node_p[tstep - 1][cs[1]] + 1000 >= 1000 * compressor_DA[tstep][cs]
