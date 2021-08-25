@@ -7,26 +7,26 @@ import time
 from tf_agents.environments import tf_py_environment
 
 # hyperparameters
-num_eval_agent_steps = 10
+num_eval_agent_steps = 80
 
-simulations_per_agent_step = 8
+simulations_per_agent_step = 1
 
 # evaluation procedure
 # import the policy accomplished through training
 temp_dir = os.getcwd() + '/instances'
 policy_dir = os.path.join(temp_dir, "policy_" +\
-                          f"cdqn_(50,)realQ_"
-                          f"iters{100}_" +\
-                          f"rate1e-2_" +\
-                          f"clip{1}_" +\
-                          f"update{500}_" +\
-                          f"epsilon025")
+                          f"cdqn_(20,)realQ_"
+                          f"iters{50}_" +\
+                          f"rate1e-2to1e-05_" +\
+                          f"clip{None}_" +\
+                          f"update{100}_" +\
+                          f"epsilondecay10to0001_run5")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
 # define the environment with nominations from file
 eval_py_env = network_environment.GasNetworkEnv(
-    discretization_steps=10,
+    action_epsilon=5,
     convert_action=True,
     steps_per_agent_step=simulations_per_agent_step,
     max_agent_steps=num_eval_agent_steps,
