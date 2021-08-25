@@ -173,7 +173,7 @@ def cdqn_agent_training(
 
     max_agent_steps = 80 # @param {type:"integer"}
     steps_per_agent_step = 1    # @param {type:"integer"}
-    action_epsilon = 5 # @param {type:"integer"}
+    action_epsilon = 10 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
     random_entry_nominations = False   # @param {type:"boolean"}
