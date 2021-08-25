@@ -470,7 +470,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             activation = 0
                         # if compressor did actively work on minimal
                         # positive level before -> idle mode
-                        elif efficiency - self._action_epsilon/100 < 0.0:
+                        elif efficiency - self._action_epsilon/100 < 10e-3:
                             efficiency = 0.0
                         # otherwise just reduce the gas value
                         else:
