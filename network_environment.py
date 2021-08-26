@@ -168,9 +168,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #
             # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
-            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
-                               [0 + self._entry_offset]
-                               for supply in co.special]
+            self._nom_scenario = random.randint(0, 1)
+            if self._nom_scenario == 0:
+                nominations_t0 += [400, 700]
+            else:
+                nominations_t0 += [700, 400]
+            #nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+            #                   [0 + self._entry_offset]
+            #                   for supply in co.special]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
                                [0 + self._entry_offset]
@@ -202,8 +207,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             [self._steps_per_agent_steps]
                     else:
                         key = joiner(node)
-                        nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps + self._entry_offset]
+                        #nomination = init_decisions["entry_nom"]["S"][key]\
+                        #    [self._steps_per_agent_steps + self._entry_offset]
+                        nomination = nominations_t0[count]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
@@ -275,9 +281,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #
             # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
-            nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
-                               [0 + self._entry_offset]
-                               for supply in co.special]
+            self._nom_scenario = random.randint(0, 1)
+            if self._nom_scenario == 0:
+                nominations_t0 += [400, 700]
+            else:
+                nominations_t0 += [700, 400]
+            #nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+            #                   [0 + self._entry_offset]
+            #                   for supply in co.special]
         else:
             nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
                                [0 + self._entry_offset]
@@ -549,30 +560,31 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 #         and scenario == 0):
                 #     nomination -= 50
                 # at EN we can reach the upper/lower nomination bound
-                if 'EN' in key:
-                    if nomination == config["upper_nom_EN"]:
-                        if scenario == 0:
-                            nomination -= 50
-                    elif nomination == config["lower_nom_EN"]:
-                        if scenario == 0:
-                            nomination += 50
-                    else:
-                        if scenario == 1:
-                            nomination += 50
-                        elif scenario == 2:
-                            nomination -= 50
-                else:
-                    if nomination == config["upper_nom_EH"]:
-                        if scenario == 0:
-                            nomination -= 50
-                    elif nomination == config["lower_nom_EH"]:
-                        if scenario == 0:
-                            nomination += 50
-                    else:
-                        if scenario == 1:
-                            nomination -= 50
-                        elif scenario == 2:
-                            nomination += 50
+                # second implementation:
+                # if 'EN' in key:
+                #     if nomination == config["upper_nom_EN"]:
+                #         if scenario == 0:
+                #             nomination -= 50
+                #     elif nomination == config["lower_nom_EN"]:
+                #         if scenario == 0:
+                #             nomination += 50
+                #     else:
+                #         if scenario == 1:
+                #             nomination += 50
+                #         elif scenario == 2:
+                #             nomination -= 50
+                # else:
+                #     if nomination == config["upper_nom_EH"]:
+                #         if scenario == 0:
+                #             nomination -= 50
+                #     elif nomination == config["lower_nom_EH"]:
+                #         if scenario == 0:
+                #             nomination += 50
+                #     else:
+                #         if scenario == 1:
+                #             nomination -= 50
+                #         elif scenario == 2:
+                #             nomination += 50
 
                 nominations_t1 += [nomination]
 
