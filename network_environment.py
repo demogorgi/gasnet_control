@@ -318,8 +318,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                             [self._steps_per_agent_steps]
                     else:
                         key = joiner(node)
-                        nomination = init_decisions["entry_nom"]["S"][key]\
-                            [self._steps_per_agent_steps + self._entry_offset]
+                        #nomination = init_decisions["entry_nom"]["S"][key]\
+                        #    [self._steps_per_agent_steps + self._entry_offset]
+                        nomination = nominations_t0[count]
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
