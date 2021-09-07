@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import base64
 import os
 import sys
+from datetime import datetime
 
 import numpy as np
 import matplotlib
@@ -23,6 +24,8 @@ from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.trajectories import trajectory
 from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
+
+#import tensorboard
 
 import network_environment
 
@@ -424,6 +427,9 @@ def cdqn_agent_training(
     print(f"Needed {procedure_time} seconds which is {procedure_time/60} minutes "
           f"or {procedure_time/3600} hours for {num_iterations} iterations")
 
+# stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+# logdir = os.getcwd() + '/debug/%s' % stamp
+# writer = tf.summary.create_file_writer(logdir)
 
 for iterations in in_num_iterations_options:
     for rate in in_learning_rates:
@@ -431,6 +437,9 @@ for iterations in in_num_iterations_options:
             for gradient in in_gradient_clippings:
                 # first perform epsilon decay
                 for eps in in_end_epsilons:
+                    #writer = tf.summary.create_file_writer(logdir=os.getcwd() + "/debug")
+                    #with writer.as_default():
+                    tf.summary.trace_on(graph=True, profiler=True)
                     cdqn_agent_training(
                         in_num_iterations=iterations,
                         in_learning_rate=rate,
@@ -455,3 +464,10 @@ for iterations in in_num_iterations_options:
                         gradient,
                         False
                     )
+
+# with writer.as_default():
+#     tf.summary.trace_export(
+#         name="tracing",
+#         step=0,
+#         profiler_outdir=logdir
+#     )
