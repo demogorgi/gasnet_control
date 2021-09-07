@@ -19,8 +19,8 @@ policy_dir = os.path.join(temp_dir, "policy_" +\
                           f"iters{200}_" +\
                           f"rate1e-2to1e-05_" +\
                           f"clip{None}_" +\
-                          f"update{2000}_" +\
-                          f"epsilondecay025to0001")
+                          f"update{5}_" +\
+                          f"epsilondecay10to0001")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
@@ -30,7 +30,7 @@ eval_py_env = network_environment.GasNetworkEnv(
     convert_action=True,
     steps_per_agent_step=simulations_per_agent_step,
     max_agent_steps=num_eval_agent_steps,
-    random_nominations=False,
+    random_nominations=True,
     print_actions=True
 )
 
