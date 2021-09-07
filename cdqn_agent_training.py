@@ -115,7 +115,7 @@ def cdqn_agent_training(
 ):
     num_iterations = in_num_iterations    # @param {type:"integer"}
 
-    initial_collect_steps = 1000  # before:100  # @param {type:"integer"}
+    initial_collect_steps = 10000  # before:100  # @param {type:"integer"}
     collect_steps_per_iteration = 1  # @param {type:"integer"}
     replay_buffer_max_length = 100000  # @param {type:"integer"}
 
@@ -171,7 +171,7 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 80 # @param {type:"integer"}
+    max_agent_steps = 160 # @param {type:"integer"}
     steps_per_agent_step = 1    # @param {type:"integer"}
     action_epsilon = 10 # @param {type:"integer"}
 
@@ -404,7 +404,7 @@ def cdqn_agent_training(
 
     ##### evaluation #####
     total_return = 0.0
-    max_return = max_agent_steps * num_eval_episodes
+    max_return = max_agent_steps
     for _ in range(num_eval_episodes):
         eval_time_step = eval_env.reset()
         episode_return = 0.0
