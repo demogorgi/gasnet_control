@@ -22,7 +22,7 @@ policy_dir = os.path.join(temp_dir, "policy_" +\
                           f"rate1e-2to1e-05_" +\
                           f"clip{None}_" +\
                           f"update{100}_" +\
-                          f"epsilondecay10to0001_run10")
+                          f"epsilondecay05to0001_run451")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
