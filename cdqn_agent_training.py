@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import base64
 import os
 import sys
-from datetime import datetime
 
 import numpy as np
 import matplotlib
@@ -25,12 +24,10 @@ from tf_agents.trajectories import trajectory
 from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
 
-#import tensorboard
-
 import network_environment
 
 # hyper-parameters
-on_cluster = True
+on_cluster = False
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
@@ -99,7 +96,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [50_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
@@ -204,7 +201,8 @@ def cdqn_agent_training(
         input_tensor_spec=train_env.observation_spec(),
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
-        fc_layer_params=fc_layer_param
+        fc_layer_params=fc_layer_param,
+        activation_fn=tf.nn.sigmoid
     )
 
     # instantiate dqn agent
@@ -427,9 +425,6 @@ def cdqn_agent_training(
     print(f"Needed {procedure_time} seconds which is {procedure_time/60} minutes "
           f"or {procedure_time/3600} hours for {num_iterations} iterations")
 
-# stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-# logdir = os.getcwd() + '/debug/%s' % stamp
-# writer = tf.summary.create_file_writer(logdir)
 
 for iterations in in_num_iterations_options:
     for rate in in_learning_rates:
@@ -437,9 +432,6 @@ for iterations in in_num_iterations_options:
             for gradient in in_gradient_clippings:
                 # first perform epsilon decay
                 for eps in in_end_epsilons:
-                    #writer = tf.summary.create_file_writer(logdir=os.getcwd() + "/debug")
-                    #with writer.as_default():
-                    tf.summary.trace_on(graph=True, profiler=True)
                     cdqn_agent_training(
                         in_num_iterations=iterations,
                         in_learning_rate=rate,
@@ -464,10 +456,3 @@ for iterations in in_num_iterations_options:
                         gradient,
                         False
                     )
-
-# with writer.as_default():
-#     tf.summary.trace_export(
-#         name="tracing",
-#         step=0,
-#         profiler_outdir=logdir
-#     )

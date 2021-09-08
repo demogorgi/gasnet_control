@@ -15,12 +15,12 @@ simulations_per_agent_step = 8
 # import the policy accomplished through training
 temp_dir = os.getcwd() + '/instances'
 policy_dir = os.path.join(temp_dir, "policy_" +\
-                          f"cdqn_(80,)realQ_"
-                          f"iters{200}_" +\
+                          f"cdqn_(20,)realQ_"
+                          f"iters{50}_" +\
                           f"rate1e-2to1e-05_" +\
                           f"clip{None}_" +\
-                          f"update{5}_" +\
-                          f"epsilondecay10to0001")
+                          f"update{100}_" +\
+                          f"epsilondecay10to0001_run130")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
@@ -40,7 +40,7 @@ eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 time_step = eval_env.reset()
 step = 0
 for _ in range(num_eval_agent_steps):
-    time.sleep(5)
+    #time.sleep(5)
     print("#"*15 + f"Evaluation of step {step}" + "#"*15)
     if not time_step.is_last():
         action_step = trained_policy.action(time_step)
