@@ -27,7 +27,7 @@ from tf_agents.utils import common
 import network_environment
 
 # hyper-parameters
-on_cluster = True
+on_cluster = False
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
@@ -96,7 +96,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [50_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
@@ -201,7 +201,8 @@ def cdqn_agent_training(
         input_tensor_spec=train_env.observation_spec(),
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
-        fc_layer_params=fc_layer_param
+        fc_layer_params=fc_layer_param,
+        activation_fn=tf.nn.sigmoid
     )
 
     # instantiate dqn agent
