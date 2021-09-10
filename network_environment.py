@@ -105,12 +105,13 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         ## extract the network state specifities
         # get all nodes and pipes but exclude helper elements
-        # all nodes in the relevant network
-        nodes_list = list(obs_no.innodes)
-        # entries and exits of the relevant network
-        nodes_list += obs_no.nodes_with_bds
+        # # all nodes in the relevant network
+        # nodes_list = list(obs_no.innodes)
+        # # entries and exits of the relevant network
+        # nodes_list += obs_no.nodes_with_bds
+        nodes_list = obs_no.exits
         # only (non-)pipes where one element starts with 'N' are observable
-        pipes_list = list(obs_co.pipes)
+        pipes_list = []#list(obs_co.pipes)
         non_pipes_list = obs_co.obs_non_pipes
 
         n_nodes = len(nodes_list)
@@ -168,12 +169,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #
             # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
+            # swap implementation
             self._nom_scenario = random.randint(0, 1)
             if self._nom_scenario == 0:
                 nominations_t0 += [400, 700]
             else:
                 nominations_t0 += [700, 400]
-            #nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+            # start with initial nominations implementation
+            # nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
             #                   [0 + self._entry_offset]
             #                   for supply in co.special]
         else:
@@ -200,6 +203,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # breaks = [0] + breaks + [nomination_sum]
             # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
+            # epsilon tube implementation
+            scenario = random.randint(0, 2)
             for count, node in enumerate(no.exits + co.special):
                 try:
                     if type(node) == str:
@@ -210,6 +215,17 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         #nomination = init_decisions["entry_nom"]["S"][key]\
                         #    [self._steps_per_agent_steps + self._entry_offset]
                         nomination = nominations_t0[count]
+                        # epsilon tube implementation
+                        # if 'EN' in key:
+                        #     if scenario == 1:
+                        #         nomination += 50
+                        #     elif scenario == 2:
+                        #         nomination -= 50
+                        # else:
+                        #     if scenario == 1:
+                        #         nomination -= 50
+                        #     elif scenario == 2:
+                        #         nomination += 50
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
@@ -281,12 +297,14 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #
             # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
+            # swap implementation
             self._nom_scenario = random.randint(0, 1)
             if self._nom_scenario == 0:
                 nominations_t0 += [400, 700]
             else:
                 nominations_t0 += [700, 400]
-            #nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
+            # starting at given nomination implementation
+            # nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
             #                   [0 + self._entry_offset]
             #                   for supply in co.special]
         else:
@@ -296,6 +314,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         nominations_t1 = []
 
+        # epsilon tube implementation
+        scenario = random.randint(0, 2)
         if self._random_nominations:
             # for count, node in enumerate(no.exits):
             #     try:
@@ -321,6 +341,17 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         #nomination = init_decisions["entry_nom"]["S"][key]\
                         #    [self._steps_per_agent_steps + self._entry_offset]
                         nomination = nominations_t0[count]
+                        # epsilon tube implementation
+                        # if 'EN' in key:
+                        #     if scenario == 1:
+                        #         nomination += 50
+                        #     elif scenario == 2:
+                        #         nomination -= 50
+                        # else:
+                        #     if scenario == 1:
+                        #         nomination -= 50
+                        #     elif scenario == 2:
+                        #         nomination += 50
                 except KeyError:
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
