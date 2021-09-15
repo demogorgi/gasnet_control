@@ -111,7 +111,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # nodes_list += obs_no.nodes_with_bds
         nodes_list = obs_no.exits
         # only (non-)pipes where one element starts with 'N' are observable
-        pipes_list = []#list(obs_co.pipes)
+        pipes_list = list(obs_co.pipes)
         non_pipes_list = obs_co.obs_non_pipes
 
         n_nodes = len(nodes_list)
@@ -128,8 +128,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         #node_inflow_minima = [-10000]*n_nodes
         #node_inflow_maxima = [10000]*n_nodes
         # extract in and non pipe infos, TODO: extract from file?
-        pipe_in_minima = [-10000]*n_pipes
-        pipe_in_maxima = [10000]*n_pipes
+        pipe_in_minima = [-100]*n_pipes
+        pipe_in_maxima = [1600]*n_pipes
         non_pipe_minima = [-10000]*n_non_pipes
         non_pipe_maxima = [10000]*n_non_pipes
 
