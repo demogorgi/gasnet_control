@@ -171,7 +171,7 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 10 # @param {type:"integer"}
+    max_agent_steps = 6 # @param {type:"integer"}
     steps_per_agent_step = 8    # @param {type:"integer"}
     discretization = 10 # @param {type:"integer"}
 
@@ -247,7 +247,7 @@ def cdqn_agent_training(
 
         avg_return_local = total_return_local / num_episodes
 
-        if avg_return_local > 9 and not on_cluster:
+        if avg_return_local > max_agent_steps*0.9 and not on_cluster:
             time_step = environment.reset()
             while not time_step.is_last():
                 action_step = policy.action(time_step)
@@ -383,7 +383,7 @@ def cdqn_agent_training(
     iterations = range(0, num_iterations + 1, eval_interval)
     plt.figure()
     plt.plot(iterations, returns)
-    plt.hlines(9.5, iterations[0], iterations[-1], 'r')
+    plt.hlines(max_agent_steps*0.95, iterations[0], iterations[-1], 'r')
     plt.xlabel('Iterations')
     plt.ylabel('Average Return')
     if on_cluster:
