@@ -5,8 +5,8 @@ from gurobipy import GRB
 
 # set up Q boundaries
 nodes_with_bds, q_lb, q_ub = gp.multidict({
-    'XN': [-510, -490],
-    'XH': [-610, -590],
+    #'XN': [-510, -490],
+    #'XH': [-610, -590],
     'EH': [0, 1600],
     'EN': [0, 1600]
 })
@@ -21,6 +21,8 @@ entries, entry_flow_bound, pressure = gp.multidict({
 
 # set up exits
 exits = ['XN', 'XH']
+# specified exits here have to be in nodes_with_bds above
+exits_for_nom = []
 
 # set up innodes
 innodes = [#'N23_1', 'N13', 'N14',

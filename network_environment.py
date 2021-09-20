@@ -158,7 +158,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # define the initial state (initial network + nominations)
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
-                          for ex in no.exits]
+                          for ex in obs_no.exits_for_nom]
         if self._random_nominations:
             # nomination_sum = int(np.abs(sum(nominations_t0)))
             # n_entries = len(no.nodes_with_bds) - len(no.exits)
@@ -205,7 +205,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #                    for break_step in range(1, n_entries + 1)]
             # epsilon tube implementation
             scenario = random.randint(0, 2)
-            for count, node in enumerate(no.exits + co.special):
+            for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
@@ -230,7 +230,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
         else:
-            for count, node in enumerate(no.exits + co.special):
+            for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
@@ -285,7 +285,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
         # extract the initial nominations and if given for the next time step
         nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
-                          for ex in no.exits]
+                          for ex in obs_no.exits_for_nom]
 
         if self._random_nominations:
             # nomination_sum = int(np.abs(sum(nominations_t0)))
@@ -331,7 +331,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # breaks = [0] + breaks + [nomination_sum]
             # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
-            for count, node in enumerate(no.exits + co.special):
+            for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
@@ -356,7 +356,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
         else:
-            for count, node in enumerate(no.exits + co.special):
+            for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
                     if type(node) == str:
                         nomination = init_decisions["exit_nom"]["X"][node]\
@@ -407,16 +407,16 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
         # if random nominations were required, insert it into agent_decisions
         # define the amount of entries and exit
-        n_entries_exits = len(no.nodes_with_bds)
+        n_entries_exits = len(obs_no.nodes_with_bds)
         # define the number of entries and exits
-        n_exits = len(no.exits)
+        n_exits = len(obs_no.exits_for_nom)
         n_entries = n_entries_exits - n_exits
         current_entry_nominations = self._state[n_exits:n_entries_exits]
         current_exit_nominations = self._state[:n_exits]
 
         if self._random_nominations:
             # fill the exit nominations if not given in the file
-            for count, node in enumerate(no.exits):
+            for count, node in enumerate(obs_no.exits_for_nom):
                 try:
                     nomination = agent_decisions["exit_nom"]["X"][node]\
                         [big_step * self._steps_per_agent_steps]
@@ -574,10 +574,10 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t1 = []
         if self._random_nominations:
             # TODO: add random interchange of two scenarios
-            for count, node in enumerate(no.exits):
+            for count, node in enumerate(obs_no.exits_for_nom):
                 try:
                     nomination = agent_decisions["exit_nom"]["X"][node] \
-                        [(self._action_counter + 1) *
+                        [(self._action_counter + 2) *
                          self._steps_per_agent_steps]
                 except KeyError:
                     nomination = nominations_t0[count]
@@ -638,16 +638,16 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
             #                    for break_step in range(1, n_entries + 1)]
         else:
-            for count, node in enumerate(no.exits + co.special):
+            for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
                     if type(node) == str:
                         nomination = agent_decisions["exit_nom"]["X"][node]\
-                            [(self._action_counter + 1) *
+                            [(self._action_counter + 2) *
                              self._steps_per_agent_steps]
                     else:
                         key = joiner(node)
                         nomination = agent_decisions["entry_nom"]["S"][key]\
-                            [(self._action_counter + 1) *
+                            [(self._action_counter + 2) *
                              self._steps_per_agent_steps + self._entry_offset]
                 except KeyError:
                     nomination = nominations_t0[count]
