@@ -553,8 +553,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         # a pressure violation is rated as critical -> if n = amount exits
         # the ith exit is equal to a violation of 2^(n - i)/(2^n - 1)
         n_press_viol = len(pressure_violations)
-        pressure_violation = np.sum([2**(n_press_viol - i - 1) /
-                                     (2**n_press_viol - 1)
+        pressure_violation = np.sum([2**(len(no.exits) - i - 1) /
+                                     (2**len(no.exits) - 1)
                                      for i in range(n_press_viol)])
         if not self._episode_ended:
             agent_step_reward = 1.0 - (pressure_violation + flow_violation)
