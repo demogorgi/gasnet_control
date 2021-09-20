@@ -4,11 +4,11 @@ import gurobipy as gp
 from gurobipy import GRB
 
 # set up Q boundaries
-nodes_with_bds, q_lb, q_ub = gp.multidict({
+nodes_with_bds, nom_lb, nom_ub = gp.multidict({
     #'XN': [-510, -490],
     #'XH': [-610, -590],
-    'EH': [0, 1600],
-    'EN': [0, 1600]
+    'EH': [0, 1100],
+    'EN': [0, 1100]
 })
 
 # set up entries
