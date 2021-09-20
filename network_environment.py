@@ -95,55 +95,47 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 name='action'
             )
         ### define the observations specificities
-        ## extract the nominations
-        entries_exits_list = obs_no.nodes_with_bds
-        entries_exits_minima = [obs_no.q_lb[node]
-                                for node in obs_no.nodes_with_bds]
-        entries_exits_maxima = [obs_no.q_ub[node]
-                                for node in obs_no.nodes_with_bds]
-        n_entries_exits = len(entries_exits_list)
+        ## extract the nomination properties
+        # define the entries & exits for which nominations are to be respected
+        nomination_nodes = obs_no.nodes_with_bds
+        # define the respective bounds and the amount
+        nomination_minima = [obs_no.nom_lb[node]
+                             for node in nomination_nodes]
+        nomination_maxima = [obs_no.nom_ub[node]
+                             for node in nomination_nodes]
+        n_nomination_nodes = len(nomination_nodes)
 
-        ## extract the network state specifities
-        # get all nodes and pipes but exclude helper elements
-        # # all nodes in the relevant network
-        # nodes_list = list(obs_no.innodes)
-        # # entries and exits of the relevant network
-        # nodes_list += obs_no.nodes_with_bds
-        nodes_list = obs_no.exits
-        # only (non-)pipes where one element starts with 'N' are observable
-        pipes_list = list(obs_co.pipes)
-        non_pipes_list = obs_co.obs_non_pipes
+        ## extract the pressure violation specifities
+        # define the relevant nodes
+        pressure_violation_nodes = obs_no.exits
+        # define their amount doubled for upper and lower deviations
+        n_pressure_violations = len(pressure_violation_nodes)*2
+        # define their lower and upper bounds
+        pressure_violation_minima = [0]*n_pressure_violations
+        pressure_violation_maxima = [10]*n_pressure_violations
 
-        n_nodes = len(nodes_list)
-        n_pipes = len(pipes_list)
-        n_non_pipes = len(non_pipes_list)
+        ## extract the flow specificities
+        # define the relevant pipes
+        flow_pipes = list(obs_co.pipes)
+        # define their amount
+        n_flow_pipes = len(flow_pipes)
+        # define their lower and upper bounds
+        flow_minima = [-100]*n_flow_pipes
+        flow_maxima = [1600]*n_flow_pipes
 
-        # extract the pressure ranges
-        node_pressure_minima = [obs_no.pressure_limits_lower[node] for node in
-                                nodes_list]
-        # TODO: check why initial pressures are higher than upper bound
-        node_pressure_maxima = [obs_no.pressure_limits_upper[node] + 3.0
-                                for node in nodes_list]
-        # set the inflow ranges, TODO: ask if necessary and extract from file
-        #node_inflow_minima = [-10000]*n_nodes
-        #node_inflow_maxima = [10000]*n_nodes
-        # extract in and non pipe infos, TODO: extract from file?
-        pipe_in_minima = [-100]*n_pipes
-        pipe_in_maxima = [1600]*n_pipes
-        non_pipe_minima = [-10000]*n_non_pipes
-        non_pipe_maxima = [10000]*n_non_pipes
+        ## define the actual observation spec
+        # doubled nomination nodes since we want to respect  nominations of the
+        # current and following time step
+        n_observations = 2*n_nomination_nodes + \
+                         n_pressure_violations + \
+                         n_flow_pipes
+        observation_minima = 2*nomination_minima + \
+                             pressure_violation_minima + \
+                             flow_minima
 
-        # define the actual observation spec
-        # 2 times entries and exits since we want to have nominations of time 0
-        # and time 1
-        n_observations = 2*n_entries_exits + n_nodes + n_pipes + n_non_pipes
-        observation_minima = 2*entries_exits_minima + node_pressure_minima + \
-                             pipe_in_minima + non_pipe_minima
-                             #node_inflow_minima to be added on third position
-
-        observation_maxima = 2*entries_exits_maxima + node_pressure_maxima + \
-                             pipe_in_maxima + non_pipe_maxima
-                             #node_inflow_maxima to be added on third position
+        observation_maxima = 2*nomination_maxima + \
+                             pressure_violation_maxima + \
+                             flow_maxima
 
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(n_observations,), dtype=np.float32,
@@ -152,13 +144,16 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             name='observation'
         )
 
-        self._nodes = nodes_list
-        self._pipes = pipes_list
-        self._non_pipes = non_pipes_list
-        # define the initial state (initial network + nominations)
-        # extract the initial nominations and if given for the next time step
-        nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
-                          for ex in obs_no.exits_for_nom]
+        self._nodes = pressure_violation_nodes
+        self._pipes = flow_pipes
+
+        ### define the initial state
+        ## extract the nominations
+        # extract the initial exit nominations for time step 0
+        # nominations_t0 = [init_decisions["exit_nom"]["X"][ex][0]
+        #                  for ex in obs_no.exits_for_nom]
+        nominations_t0 = []
+        # extract/compute the initial entry nominations for time step 0
         if self._random_nominations:
             # nomination_sum = int(np.abs(sum(nominations_t0)))
             # n_entries = len(no.nodes_with_bds) - len(no.exits)
@@ -184,8 +179,9 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                                [0 + self._entry_offset]
                                for supply in co.special]
         # length of nominations has to be the same as in the observation specs
-        assert(len(nominations_t0) == n_entries_exits)
+        assert(len(nominations_t0) == n_nomination_nodes)
 
+        # extract/compute the initial nominations for time step 1
         nominations_t1 = []
 
         if self._random_nominations:
@@ -243,34 +239,41 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                     nomination = nominations_t0[count]
                 nominations_t1 += [nomination]
 
-        # extract the initial node pressure and pipe inflow as well as the
-        # initial values for non pipe elements
+        ## extract the node pressure violations and flows
+        # extract all initial values
         init_states = funcs.get_init_scenario()
-        node_pressures = [init_states[-1]["p"][node] for node in nodes_list]
-        pipe_inflows = [init_states[-1]["q_out"][pipe]
+        # extract the pressure violations
+        pressure_violations_upper = [
+            np.max([
+                init_states[-1]["p"][node] - no.pressure_limits_upper[node],
+                0
+            ]) for node in pressure_violation_nodes
+        ]
+        pressure_violations_lower = [
+            np.max([
+                no.pressure_limits_lower[node] - init_states[-1]["p"][node],
+                0
+            ]) for node in pressure_violation_nodes
+        ]
+        pressure_violations = pressure_violations_upper + \
+                              pressure_violations_lower
+        # extract the flow values
+        flows = [init_states[-1]["q_out"][pipe]
                         if pipe[1].startswith("X")
                         else init_states[-1]["q_in"][pipe]
-                        for pipe in pipes_list]
-        non_pipe_values = [init_states[-1]["q"][non_pipe]
-                           for non_pipe in non_pipes_list]
+                        for pipe in flow_pipes]
 
+        ## define the initial state
         self._state = np.array(
-                        nominations_t0 + nominations_t1 + node_pressures + \
-                        pipe_inflows + non_pipe_values
+                        nominations_t0 + nominations_t1 +
+                        pressure_violations +
+                        flows
                         , np.float32)
 
-        # ## debugging
-        # for i, val in enumerate(self._state):
-        #     if val > observation_maxima[i]:
-        #         print(f"error detected at index {i}")
-        #     if val < observation_minima[i]:
-        #         print(f"error detected at index {i}")
-        # ## end of debugging
         self._episode_ended = False
 
         # counter to come to an end
         self._action_counter = 0
-        # set simulation_step counter in urmel to 0
 
     def action_spec(self):
         return self._action_spec
