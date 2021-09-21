@@ -171,7 +171,7 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 6 # @param {type:"integer"}
+    max_agent_steps = 10 # @param {type:"integer"}
     steps_per_agent_step = 8    # @param {type:"integer"}
     discretization = 10 # @param {type:"integer"}
 
@@ -202,7 +202,7 @@ def cdqn_agent_training(
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
         fc_layer_params=fc_layer_param,
-        activation_fn=tf.nn.tanh
+        activation_fn=tf.nn.sigmoid
     )
 
     # instantiate dqn agent
