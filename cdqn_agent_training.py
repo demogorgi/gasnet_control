@@ -120,7 +120,6 @@ def cdqn_agent_training(
     replay_buffer_max_length = 100000  # @param {type:"integer"}
 
     global_step = tf.compat.v1.train.get_or_create_global_step()
-
     batch_size = 64  # @param {type:"integer"}
     # if required define a decaying learning rate
     if learning_rate_decay:
@@ -139,8 +138,8 @@ def cdqn_agent_training(
 
     # new parameters for cdqn
     num_atoms = 51
-    min_q_value = -10
-    max_q_value = 10
+    min_q_value = -6
+    max_q_value = 6
     n_step_update = 2
 
     # define a decaying epsilon over time, a boltzmann and which to use
@@ -171,7 +170,7 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 10 # @param {type:"integer"}
+    max_agent_steps = 6 # @param {type:"integer"}
     steps_per_agent_step = 8    # @param {type:"integer"}
     discretization = 10 # @param {type:"integer"}
 
