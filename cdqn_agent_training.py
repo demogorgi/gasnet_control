@@ -123,11 +123,17 @@ def cdqn_agent_training(
     batch_size = 64  # @param {type:"integer"}
     # if required define a decaying learning rate
     if learning_rate_decay:
-        learning_rate = tf.compat.v1.train.polynomial_decay(
+        # learning_rate = tf.compat.v1.train.polynomial_decay(
+        #     learning_rate=in_learning_rate,
+        #     global_step=global_step,
+        #     decay_steps=in_num_iterations,
+        #     end_learning_rate=in_end_learning_rate
+        # )
+        learning_rate = tf.compat.v1.train.cosine_decay(
             learning_rate=in_learning_rate,
             global_step=global_step,
             decay_steps=in_num_iterations,
-            end_learning_rate=in_end_learning_rate
+            alpha=in_end_learning_rate
         )
     else:
         learning_rate = in_learning_rate  # @param {type:"number"}
