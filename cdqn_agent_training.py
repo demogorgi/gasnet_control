@@ -207,7 +207,7 @@ def cdqn_agent_training(
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
         fc_layer_params=fc_layer_param,
-        activation_fn=tf.nn.sigmoid
+        activation_fn=tf.nn.tanh
     )
 
     # instantiate dqn agent
