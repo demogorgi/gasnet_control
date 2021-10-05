@@ -25,6 +25,7 @@ from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
 
 import network_environment
+from params import *
 
 # hyper-parameters
 on_cluster = True
@@ -181,7 +182,7 @@ def cdqn_agent_training(
     discretization = 10 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
-    random_entry_nominations = False   # @param {type:"boolean"}
+    random_entry_nominations = True   # @param {type:"boolean"}
 
     show_plot = in_show_plot
 
@@ -202,12 +203,13 @@ def cdqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
+    activation = tf.nn.tanh if config["activ_fn"] == "tanh" else tf.nn.sigmoid
     categorical_q_net = categorical_q_network.CategoricalQNetwork(
         input_tensor_spec=train_env.observation_spec(),
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
         fc_layer_params=fc_layer_param,
-        activation_fn=tf.nn.tanh
+        activation_fn=activation
     )
 
     # instantiate dqn agent
@@ -284,8 +286,20 @@ def cdqn_agent_training(
         for _ in range(steps):
             collect_step(environment, policy, buffer)
 
+    start_time = time.time()
+
+    print("Starting the initial data collection")
     collect_data(train_env, random_policy, replay_buffer,
                  initial_collect_steps)
+    end_time = time.time()
+    needed_time = end_time - start_time
+    print("Ending the initial data collection")
+    print(f"Time used for {initial_collect_steps} initial collection steps:")
+    print(f"unit\t| amount")
+    print("-"*16)
+    print(f"sec\t| {np.round(needed_time, 2)}")
+    print(f"min\t| {np.round(needed_time/60, 2)}")
+    print(f"h\t| {np.round(needed_time/3600, 2)}")
 
     dataset = replay_buffer.as_dataset(
         num_parallel_calls=3,
