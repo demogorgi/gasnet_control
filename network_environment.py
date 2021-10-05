@@ -155,21 +155,24 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t0 = []
         # extract/compute the initial entry nominations for time step 0
         if self._random_nominations:
-            # nomination_sum = int(np.abs(sum(nominations_t0)))
-            # n_entries = len(no.nodes_with_bds) - len(no.exits)
-            # breaks = random.choices(range(0, nomination_sum + 1, 50),
-            #                         k=n_entries - 1)
-            # breaks.sort()
-            # breaks = [0] + breaks + [nomination_sum]
-            #
-            # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
-            #                    for break_step in range(1, n_entries + 1)]
-            # swap implementation
-            self._nom_scenario = random.randint(0, 1)
-            if self._nom_scenario == 0:
-                nominations_t0 += [400, 700]
-            else:
-                nominations_t0 += [700, 400]
+            nomination_sum = [init_decisions["entry_nom"]["S"][joiner(supply)]
+                              [0 + self._entry_offset]
+                              for supply in obs_co.special]
+            nomination_sum = int(np.abs(sum(nomination_sum)))
+            n_entries = len(obs_no.nodes_with_bds) - len(obs_no.exits_for_nom)
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
+                                    k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+
+            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+            # # swap implementation
+            # self._nom_scenario = random.randint(0, 1)
+            # if self._nom_scenario == 0:
+            #     nominations_t0 += [400, 700]
+            # else:
+            #     nominations_t0 += [700, 400]
             # start with initial nominations implementation
             # nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
             #                   [0 + self._entry_offset]
@@ -294,21 +297,24 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         nominations_t0 = []
         # extract/compute the initial entry nominations for time step 0
         if self._random_nominations:
-            # nomination_sum = int(np.abs(sum(nominations_t0)))
-            # n_entries = len(no.nodes_with_bds) - len(no.exits)
-            # breaks = random.choices(range(0, nomination_sum + 1, 50),
-            #                         k=n_entries - 1)
-            # breaks.sort()
-            # breaks = [0] + breaks + [nomination_sum]
-            #
-            # nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
-            #                    for break_step in range(1, n_entries + 1)]
-            # swap implementation
-            self._nom_scenario = random.randint(0, 1)
-            if self._nom_scenario == 0:
-                nominations_t0 += [400, 700]
-            else:
-                nominations_t0 += [700, 400]
+            nomination_sum = [init_decisions["entry_nom"]["S"][joiner(supply)]
+                              [0 + self._entry_offset]
+                              for supply in obs_co.special]
+            nomination_sum = int(np.abs(sum(nomination_sum)))
+            n_entries = len(obs_no.nodes_with_bds) - len(obs_no.exits_for_nom)
+            breaks = random.choices(range(0, nomination_sum + 1, 50),
+                                    k=n_entries - 1)
+            breaks.sort()
+            breaks = [0] + breaks + [nomination_sum]
+
+            nominations_t0 += [breaks[break_step] - breaks[break_step - 1]
+                               for break_step in range(1, n_entries + 1)]
+            # # swap implementation
+            # self._nom_scenario = random.randint(0, 1)
+            # if self._nom_scenario == 0:
+            #     nominations_t0 += [400, 700]
+            # else:
+            #     nominations_t0 += [700, 400]
             # starting at given nomination implementation
             # nominations_t0 += [init_decisions["entry_nom"]["S"][joiner(supply)]
             #                   [0 + self._entry_offset]
@@ -446,7 +452,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                         [big_step * self._steps_per_agent_steps] = \
                         current_exit_nominations[count]
             # fill the entry nominations as calculated randomly before
-            for count, node in enumerate(co.special):
+            for count, node in enumerate(obs_co.special):
                 key = joiner(node)
                 agent_decisions["entry_nom"]["S"][key] \
                     [big_step * self._steps_per_agent_steps +
@@ -617,7 +623,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 nominations_t1 += [nomination]
 
             scenario = random.randint(0, 2)
-            for count, node in enumerate(co.special):
+            for count, node in enumerate(obs_co.special):
                 key = joiner(node)
                 nomination = nominations_t0[n_exits + count]
                 # if ((('EN' in key and nomination == config["upper_nom_EN"]) or
