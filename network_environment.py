@@ -623,41 +623,41 @@ class GasNetworkEnv(py_environment.PyEnvironment):
                 nominations_t1 += [nomination]
 
             scenario = random.randint(0, 2)
-            for count, node in enumerate(obs_co.special):
-                key = joiner(node)
-                nomination = nominations_t0[n_exits + count]
-                # if ((('EN' in key and nomination == config["upper_nom_EN"]) or
-                #     ('EH' in key and nomination == config["upper_nom_EH"]))
-                #         and scenario == 0):
-                #     nomination -= 50
-                # at EN we can reach the upper/lower nomination bound
-                # second implementation:
-                # if 'EN' in key:
-                #     if nomination == config["upper_nom_EN"]:
-                #         if scenario == 0:
-                #             nomination -= 50
-                #     elif nomination == config["lower_nom_EN"]:
-                #         if scenario == 0:
-                #             nomination += 50
-                #     else:
-                #         if scenario == 1:
-                #             nomination += 50
-                #         elif scenario == 2:
-                #             nomination -= 50
-                # else:
-                #     if nomination == config["upper_nom_EH"]:
-                #         if scenario == 0:
-                #             nomination -= 50
-                #     elif nomination == config["lower_nom_EH"]:
-                #         if scenario == 0:
-                #             nomination += 50
-                #     else:
-                #         if scenario == 1:
-                #             nomination -= 50
-                #         elif scenario == 2:
-                #             nomination += 50
-
-                nominations_t1 += [nomination]
+            # for count, node in enumerate(obs_co.special):
+            #     key = joiner(node)
+            #     nomination = nominations_t0[n_exits + count]
+            #     # if ((('EN' in key and nomination == config["upper_nom_EN"]) or
+            #     #     ('EH' in key and nomination == config["upper_nom_EH"]))
+            #     #         and scenario == 0):
+            #     #     nomination -= 50
+            #     # at EN we can reach the upper/lower nomination bound
+            #     # second implementation:
+            #     # if 'EN' in key:
+            #     #     if nomination == config["upper_nom_EN"]:
+            #     #         if scenario == 0:
+            #     #             nomination -= 50
+            #     #     elif nomination == config["lower_nom_EN"]:
+            #     #         if scenario == 0:
+            #     #             nomination += 50
+            #     #     else:
+            #     #         if scenario == 1:
+            #     #             nomination += 50
+            #     #         elif scenario == 2:
+            #     #             nomination -= 50
+            #     # else:
+            #     #     if nomination == config["upper_nom_EH"]:
+            #     #         if scenario == 0:
+            #     #             nomination -= 50
+            #     #     elif nomination == config["lower_nom_EH"]:
+            #     #         if scenario == 0:
+            #     #             nomination += 50
+            #     #     else:
+            #     #         if scenario == 1:
+            #     #             nomination -= 50
+            #     #         elif scenario == 2:
+            #     #             nomination += 50
+            #
+            #     nominations_t1 += [nomination]
 
             # for count, node in enumerate(no.exits):
             #     try:
@@ -668,14 +668,24 @@ class GasNetworkEnv(py_environment.PyEnvironment):
             #         nomination = nominations_t0[count]
             #     nominations_t1 += [nomination]
             #
-            # nomination_sum = int(np.abs(sum(nominations_t1)))
-            # n_entries = n_entries_exits - len(no.exits)
-            # breaks = random.choices(range(0, nomination_sum + 1, 50),
-            #                        k=n_entries - 1)
-            # breaks.sort()
-            # breaks = [0] + breaks + [nomination_sum]
-            # nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
-            #                    for break_step in range(1, n_entries + 1)]
+            change_step = self._max_agent_steps/2 - 2
+            if self._action_counter == change_step:
+                nomination_sum = [agent_decisions["entry_nom"]["S"][joiner(supply)]
+                                  [0 + self._entry_offset]
+                                  for supply in obs_co.special]
+                nomination_sum = int(np.abs(sum(nomination_sum)))
+                n_entries = len(obs_no.nodes_with_bds) - len(obs_no.exits_for_nom)
+                breaks = random.choices(range(0, nomination_sum + 1, 50),
+                                        k=n_entries - 1)
+                breaks.sort()
+                breaks = [0] + breaks + [nomination_sum]
+
+                nominations_t1 += [breaks[break_step] - breaks[break_step - 1]
+                                   for break_step in range(1, n_entries + 1)]
+            else:
+                for count, node in enumerate(obs_co.special):
+                    nomination = nominations_t0[n_exits + count]
+                    nominations_t1 += [nomination]
         else:
             for count, node in enumerate(obs_no.exits_for_nom + co.special):
                 try:
