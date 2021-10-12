@@ -25,9 +25,10 @@ from tf_agents.specs import tensor_spec
 from tf_agents.utils import common
 
 import network_environment
+from params import *
 
 # hyper-parameters
-on_cluster = False
+on_cluster = True
 
 if len(sys.argv) > 4:
     in_target_update_steps_options = [int(steps) for steps in
@@ -96,7 +97,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [50_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
@@ -120,15 +121,20 @@ def cdqn_agent_training(
     replay_buffer_max_length = 100000  # @param {type:"integer"}
 
     global_step = tf.compat.v1.train.get_or_create_global_step()
-
     batch_size = 64  # @param {type:"integer"}
     # if required define a decaying learning rate
     if learning_rate_decay:
-        learning_rate = tf.compat.v1.train.polynomial_decay(
+        # learning_rate = tf.compat.v1.train.polynomial_decay(
+        #     learning_rate=in_learning_rate,
+        #     global_step=global_step,
+        #     decay_steps=in_num_iterations,
+        #     end_learning_rate=in_end_learning_rate
+        # )
+        learning_rate = tf.compat.v1.train.cosine_decay(
             learning_rate=in_learning_rate,
             global_step=global_step,
             decay_steps=in_num_iterations,
-            end_learning_rate=in_end_learning_rate
+            alpha=in_end_learning_rate
         )
     else:
         learning_rate = in_learning_rate  # @param {type:"number"}
@@ -139,8 +145,8 @@ def cdqn_agent_training(
 
     # new parameters for cdqn
     num_atoms = 51
-    min_q_value = -10
-    max_q_value = 10
+    min_q_value = -6
+    max_q_value = 6
     n_step_update = 2
 
     # define a decaying epsilon over time, a boltzmann and which to use
@@ -171,7 +177,7 @@ def cdqn_agent_training(
 
     # custom hyperoarameters
 
-    max_agent_steps = 10 # @param {type:"integer"}
+    max_agent_steps = 6 # @param {type:"integer"}
     steps_per_agent_step = 8    # @param {type:"integer"}
     discretization = 10 # @param {type:"integer"}
 
@@ -197,12 +203,13 @@ def cdqn_agent_training(
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)
 
+    activation = tf.nn.tanh if config["activ_fn"] == "tanh" else tf.nn.sigmoid
     categorical_q_net = categorical_q_network.CategoricalQNetwork(
         input_tensor_spec=train_env.observation_spec(),
         action_spec=train_env.action_spec(),
         num_atoms=num_atoms,
         fc_layer_params=fc_layer_param,
-        activation_fn=tf.nn.sigmoid
+        activation_fn=activation
     )
 
     # instantiate dqn agent
@@ -247,7 +254,7 @@ def cdqn_agent_training(
 
         avg_return_local = total_return_local / num_episodes
 
-        if avg_return_local > 9 and not on_cluster:
+        if avg_return_local > max_agent_steps*0.9 and not on_cluster:
             time_step = environment.reset()
             while not time_step.is_last():
                 action_step = policy.action(time_step)
@@ -279,8 +286,20 @@ def cdqn_agent_training(
         for _ in range(steps):
             collect_step(environment, policy, buffer)
 
+    start_time = time.time()
+
+    print("Starting the initial data collection")
     collect_data(train_env, random_policy, replay_buffer,
                  initial_collect_steps)
+    end_time = time.time()
+    needed_time = end_time - start_time
+    print("Ending the initial data collection")
+    print(f"Time used for {initial_collect_steps} initial collection steps:")
+    print(f"unit\t| amount")
+    print("-"*16)
+    print(f"sec\t| {np.round(needed_time, 2)}")
+    print(f"min\t| {np.round(needed_time/60, 2)}")
+    print(f"h\t| {np.round(needed_time/3600, 2)}")
 
     dataset = replay_buffer.as_dataset(
         num_parallel_calls=3,
@@ -383,7 +402,7 @@ def cdqn_agent_training(
     iterations = range(0, num_iterations + 1, eval_interval)
     plt.figure()
     plt.plot(iterations, returns)
-    plt.hlines(9.5, iterations[0], iterations[-1], 'r')
+    plt.hlines(max_agent_steps*0.95, iterations[0], iterations[-1], 'r')
     plt.xlabel('Iterations')
     plt.ylabel('Average Return')
     if on_cluster:

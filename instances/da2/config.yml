@@ -32,4 +32,6 @@ lower_nom_EH: 250
 upper_nom_EN: 850
 # lower bound for the nomination of EN if scenario not completely random
 lower_nom_EN: 550
+# activation function for the hidden layers of the NN (tanh/sigmoid)
+activ_fn: 'sigmoid'
 
