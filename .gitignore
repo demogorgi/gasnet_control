@@ -3,6 +3,8 @@ instances/*/__pycache__
 instances/*/benchmark_decisions.yml
 instances/*/new_init_scenario.yml
 instances/*/config.yml
+instances/da2/policy_summaries/
+instances/da2/policies_automated_testing/
 *~
 *.swp
 instances/policy*
