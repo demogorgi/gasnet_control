@@ -19,11 +19,11 @@ reset_files = True
 temp_dir = os.getcwd() + '/instances/da2/policies_automated_testing'
 
 if reset_files:
-    with open("policy_results.csv", "w") as policy_results:
+    with open("instances/da2/policy_summaries/400kiters/policy_results.csv", "w") as policy_results:
         policy_results.write("net;iterations;lr start;lr end;update steps;"
                              "eps start;eps end;reward sum;reward avg;"
                              "activation\n")
-    with open("policy_table.txt", "w") as policy_table:
+    with open("instances/da2/policy_summaries/400kiters/policy_table.txt", "w") as policy_table:
         table_header = ["net\t\t\t\t", "|iterations\t", "|lr start\t",
                         "|lr end\t", "|update steps\t", "|eps start\t",
                         "|eps end\t", "|reward sum\t", "|reward avg\t",
@@ -90,7 +90,7 @@ for policy_name in os.listdir(temp_dir):
                          learning_rate_end, update_steps, epsilon_start,
                          epsilon_end, reward_sum, reward_avg, activation]
 
-    with open("policy_results.csv", "a+") as policy_results:
+    with open("instances/da2/policy_summaries/400kiters/policy_results.csv", "a+") as policy_results:
         policy_results.write(network + ";" + str(iterations) + ";" +
                              str(learning_rate_start) + ";" +
                              str(learning_rate_end) +
@@ -99,7 +99,7 @@ for policy_name in os.listdir(temp_dir):
                              str(epsilon_end) + ";" + str(np.round(reward_sum, 2)) + ";" +
                              str(np.round(reward_avg, 3)) + ";" +
                              str(activation) + "\n")
-    with open("policy_table.txt", "a+") as policy_table:
+    with open("instances/da2/policy_summaries/400kiters/policy_table.txt", "a+") as policy_table:
         for (index, attribute) in enumerate(policy_attributes):
             tab_len = header_widths[index] - len(str(attribute)) - 1
             n_tabs = int(np.ceil(tab_len/4))

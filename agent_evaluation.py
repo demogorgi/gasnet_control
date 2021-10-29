@@ -3,35 +3,44 @@ import tensorflow as tf
 import os
 import network_environment
 import time
+import evaluation_network_environment
 
 from tf_agents.environments import tf_py_environment
 
 # hyperparameters
-num_eval_agent_steps = 10
+num_eval_agent_steps = 36
 
 simulations_per_agent_step = 8
 
 # evaluation procedure
 # import the policy accomplished through training
-temp_dir = os.getcwd() + '/instances'
+temp_dir = os.getcwd() + '/instances/da2/policies_automated_testing/'
 policy_dir = os.path.join(temp_dir, "policy_" +\
-                          f"cdqn_(20,)realQ_"
-                          f"iters{50}_" +\
+                          f"cdqn_(22, 32, 42)realQ_"
+                          f"iters{400}_" +\
                           f"rate1e-2to1e-05_" +\
                           f"clip{None}_" +\
-                          f"update{100}_" +\
-                          f"epsilondecay10to0001_run130")
+                          f"update{5}_" +\
+                          f"epsilondecay10to0001_sigmoid")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
 
 # define the environment with nominations from file
-eval_py_env = network_environment.GasNetworkEnv(
+# eval_py_env = network_environment.GasNetworkEnv(
+#     discretization_steps=10,
+#     convert_action=True,
+#     steps_per_agent_step=simulations_per_agent_step,
+#     max_agent_steps=num_eval_agent_steps,
+#     random_nominations=True,
+#     print_actions=True
+# )
+eval_py_env = evaluation_network_environment.GasNetworkEnv(
     discretization_steps=10,
     convert_action=True,
     steps_per_agent_step=simulations_per_agent_step,
     max_agent_steps=num_eval_agent_steps,
-    random_nominations=True,
-    print_actions=True
+    random_nominations=False,
+    print_actions=False
 )
 
 eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)

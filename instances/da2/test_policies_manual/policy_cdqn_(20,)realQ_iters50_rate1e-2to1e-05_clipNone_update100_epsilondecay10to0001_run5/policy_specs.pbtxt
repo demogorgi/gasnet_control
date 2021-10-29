@@ -1,0 +1,135 @@
+dict_value {
+  fields {
+    key: "collect_data_spec"
+    value {
+      named_tuple_value {
+        name: "Trajectory"
+        values {
+          key: "step_type"
+          value {
+            tensor_spec_value {
+              name: "step_type"
+              shape {
+              }
+              dtype: DT_INT32
+            }
+          }
+        }
+        values {
+          key: "observation"
+          value {
+            bounded_tensor_spec_value {
+              name: "observation"
+              shape {
+                dim {
+                  size: 22
+                }
+              }
+              dtype: DT_FLOAT
+              minimum {
+                dtype: DT_FLOAT
+                tensor_shape {
+                  dim {
+                    size: 22
+                  }
+                }
+                tensor_content: "\000\000\377\303\000\200\030\304\000\000\000\000\000\000\000\000\000\000\377\303\000\200\030\304\000\000\000\000\000\000\000\000-\262\201?-\262\201?-\262\201?-\262\201?\221\r`B\311\006\206B-\262\201?-\262\201?\000@\034\306\000@\034\306\000@\034\306\000@\034\306\000@\034\306\000@\034\306"
+              }
+              maximum {
+                dtype: DT_FLOAT
+                tensor_shape {
+                  dim {
+                    size: 22
+                  }
+                }
+                tensor_content: "\000\000\365\303\000\200\023\304\000\000\310D\000\000\310D\000\000\365\303\000\200\023\304\000\000\310D\000\000\310D\311\006\330B\311\006\330B\311\006\330B\311\006\330B\311\006\230B\311\006\262B\311\006\330B\311\006\330B\000@\034F\000@\034F\000@\034F\000@\034F\000@\034F\000@\034F"
+              }
+            }
+          }
+        }
+        values {
+          key: "action"
+          value {
+            bounded_tensor_spec_value {
+              name: "action"
+              shape {
+              }
+              dtype: DT_INT32
+              minimum {
+                dtype: DT_INT32
+                tensor_shape {
+                }
+                int_val: 0
+              }
+              maximum {
+                dtype: DT_INT32
+                tensor_shape {
+                }
+                int_val: 8
+              }
+            }
+          }
+        }
+        values {
+          key: "policy_info"
+          value {
+            tuple_value {
+            }
+          }
+        }
+        values {
+          key: "next_step_type"
+          value {
+            tensor_spec_value {
+              name: "step_type"
+              shape {
+              }
+              dtype: DT_INT32
+            }
+          }
+        }
+        values {
+          key: "reward"
+          value {
+            tensor_spec_value {
+              name: "reward"
+              shape {
+              }
+              dtype: DT_FLOAT
+            }
+          }
+        }
+        values {
+          key: "discount"
+          value {
+            bounded_tensor_spec_value {
+              name: "discount"
+              shape {
+              }
+              dtype: DT_FLOAT
+              minimum {
+                dtype: DT_FLOAT
+                tensor_shape {
+                }
+                float_val: 0.0
+              }
+              maximum {
+                dtype: DT_FLOAT
+                tensor_shape {
+                }
+                float_val: 1.0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  fields {
+    key: "policy_state_spec"
+    value {
+      tuple_value {
+      }
+    }
+  }
+}
