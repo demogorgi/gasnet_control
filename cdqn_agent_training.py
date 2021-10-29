@@ -97,7 +97,7 @@ else:
     no_run = -1
 
 
-in_num_iterations_options = [400_000]#[200000]#[5000, 20000, 50000]
+in_num_iterations_options = [200_000]#[200000]#[5000, 20000, 50000]
 in_boltzmann_temperatures = []
 # in_target_update_steps_options = [5000] #100, 250, 400, 550, 700, 850, 1000
 
@@ -182,7 +182,7 @@ def cdqn_agent_training(
     discretization = 10 # @param {type:"integer"}
 
     convert_action = True   # @param {type:"boolean"}
-    random_entry_nominations = True   # @param {type:"boolean"}
+    random_entry_nominations = False   # @param {type:"boolean"}
 
     show_plot = in_show_plot
 
