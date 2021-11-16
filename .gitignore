@@ -13,3 +13,5 @@ gurobi.log
 dat
 __pycache__/
 rewardfile.csv
+instances/*/policies
+scenario_table_*.txt
