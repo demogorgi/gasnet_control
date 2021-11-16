@@ -8,19 +8,19 @@ import evaluation_network_environment
 from tf_agents.environments import tf_py_environment
 
 # hyperparameters
-num_eval_agent_steps = 36
+num_eval_agent_steps = 10
 
 simulations_per_agent_step = 8
 
 # evaluation procedure
 # import the policy accomplished through training
-temp_dir = os.getcwd() + '/instances/da2/policies_automated_testing/'
+temp_dir = os.getcwd() + '/instances/da2/policies/400kiters_allrandom/'
 policy_dir = os.path.join(temp_dir, "policy_" +\
                           f"cdqn_(22, 32, 42)realQ_"
                           f"iters{400}_" +\
                           f"rate1e-2to1e-05_" +\
                           f"clip{None}_" +\
-                          f"update{5}_" +\
+                          f"update{500}_" +\
                           f"epsilondecay10to0001_sigmoid")
                           #f"boltzmann{0.1}")
 trained_policy = tf.compat.v2.saved_model.load(policy_dir)
@@ -40,7 +40,8 @@ eval_py_env = evaluation_network_environment.GasNetworkEnv(
     steps_per_agent_step=simulations_per_agent_step,
     max_agent_steps=num_eval_agent_steps,
     random_nominations=False,
-    print_actions=False
+    print_actions=True,
+    decision_string="evaluation_scenario.yml"
 )
 
 eval_env = tf_py_environment.TFPyEnvironment(eval_py_env)

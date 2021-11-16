@@ -36,7 +36,8 @@ class GasNetworkEnv(py_environment.PyEnvironment):
 
     def __init__(self, discretization_steps=10, convert_action=True,
                  steps_per_agent_step=8, max_agent_steps=1,
-                 random_nominations=True, print_actions=False):
+                 random_nominations=True, print_actions=False,
+                 decision_string=None):
         ### define the action specificities
         self._convert_action = convert_action
         self._steps_per_agent_steps = steps_per_agent_step
@@ -46,7 +47,11 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         self._print_actions = print_actions
 
         # analyse initial decisions to extract values
-        with open(path.join(data_path, 'evaluation_scenario.yml')) as init_file:
+        if decision_string is None:
+            self._decision_yml = "init_decisions.yml"
+        else:
+            self._decision_yml = decision_string
+        with open(path.join(data_path, self._decision_yml)) as init_file:
             init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
 
         # safe the control variable names for later mapping
@@ -295,7 +300,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
     def _reset(self):
         ### reset of the self state
         ## extract initial decisions/values
-        with open(path.join(data_path, 'evaluation_scenario.yml')) as init_file:
+        with open(path.join(data_path, self._decision_yml)) as init_file:
             init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
 
         ## extract the nominations
@@ -448,7 +453,7 @@ class GasNetworkEnv(py_environment.PyEnvironment):
         big_step = self._action_counter
         # convert the action vector such that urmel can use it
         # first get the necessary dictionary syntax
-        with open(path.join(data_path, 'evaluation_scenario.yml')) as dec_file:
+        with open(path.join(data_path, self._decision_yml)) as dec_file:
             agent_decisions = yaml.load(dec_file, Loader=yaml.FullLoader)
 
         # if random nominations were required, insert it into agent_decisions

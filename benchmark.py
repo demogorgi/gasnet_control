@@ -6,6 +6,7 @@ from urmel import *
 from model import *
 import functions as funcs
 from params import *
+obs_no = importlib.import_module(wd + ".observable_nodes")
 
 max_iterations = 15
 
@@ -18,7 +19,8 @@ def get_decision(decisions, time_step):
 
 
 def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
-                  rounded_decimal=None, enable_idle_compressor=True):
+                  rounded_decimal=None, enable_idle_compressor=True,
+                  custom_init_decisions=None):
     init_states = funcs.get_init_scenario()
 
     low_entry = co.special[1]
@@ -32,8 +34,11 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
     if rounded_decimal is not None:
         numpy_offset = -10**(-rounded_decimal - 2)
 
-    with open(path.join(data_path, 'init_decisions.yml')) as init_file:
-        init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
+    if custom_init_decisions is None:
+        with open(path.join(data_path, 'init_decisions.yml')) as init_file:
+            init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
+    else:
+        init_decisions = custom_init_decisions.copy()
 
     low_exit = no.exits[0]
     high_exit = no.exits[1]
@@ -149,7 +154,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
                                              rounded_decimal)
                     else:
                         new_value = np.round(new_value + numpy_offset,
-                                             rounded_decimal - 2)
+                                             rounded_decimal - 1)
 
                     # numpy rounds downwards -> check for same value and
                     # equality to upper bound. If not -> test upper bound
@@ -183,7 +188,7 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
                                              rounded_decimal)
                     else:
                         new_value = np.round(new_value + numpy_offset,
-                                             rounded_decimal - 2)
+                                             rounded_decimal - 1)
 
                     # terminate if no change in search values
                     if new_value == search_values[2] or\
@@ -229,17 +234,32 @@ def get_benchmark(simulation_steps=8, n_episodes=10, flow_variant=False,
             init_decisions["gas"]["CS"][compressor][time_index] = \
                 best_current_decision[2]
 
+            # simulate with the found decisions to update the state variables
+            for step in range(simulation_steps):
+                solution = simulator_step(
+                    init_decisions,
+                    time_index + step,
+                    "sim"
+                )
+            # update the new init flow
+            low_init_flow = solution["var_pipe_Qo_out[%s,%s]" % low_entry]
+
     return decisions, init_decisions
 
 
-def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
+def perform_benchmark(decisions, simulation_steps=8, n_episodes=10,
+                      custom_init_decisions=None):
     ub_entry_violation = 1100
     n_entries = 2
     # simulator_step.counter = 0
     overall_reward = 0.0
+    rewards = []
 
-    with open(path.join(data_path, 'init_decisions.yml')) as init_file:
-        init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
+    if custom_init_decisions is None:
+        with open(path.join(data_path, 'init_decisions.yml')) as init_file:
+            init_decisions = yaml.load(init_file, Loader=yaml.FullLoader)
+    else:
+        init_decisions = custom_init_decisions
 
     compressor = list(init_decisions["compressor"]["CS"].keys())[0]
     resistor = list(init_decisions["zeta"]["RE"].keys())[0]
@@ -269,8 +289,10 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
               f"{'' if compr_active == 0 else ' with efficiency ' + str(decisions['gas'][episode])}")
 
         # initialize variables for rewards calculation
+        obs_nodes = obs_no.exits
         episode_flow_violation = {}
-        episode_pressure_violations = []
+        episode_pressure_violations = set()
+        episode_pressure_violation_values = [0.0]*(2*len(obs_nodes))
 
         # simulate each step
         for step in range(simulation_steps):
@@ -298,7 +320,15 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
                             violated_exit = variable_name.split("[")[1]
                             violated_exit = violated_exit.split("]")[0]
                             # mark violations via appendix to set
-                            episode_pressure_violations.append(violated_exit)
+                            episode_pressure_violations.add(violated_exit)
+                            # extract the node index
+                            node_index = obs_nodes.index(violated_exit)
+                            # adjust the node index dependent on ub/lb
+                            if variable_name.startswith("lb"):
+                                node_index += len(obs_nodes)
+                            # add the violation to the respective value
+                            episode_pressure_violation_values[node_index] += \
+                                violation
 
         # reward calculation between [-1, 1]
         # each flow violation has an impact of max 1/n_entries and is dependent
@@ -321,6 +351,7 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
                                      for i in range(n_press_viol)])
         reward = 1.0 - (pressure_violation + flow_violation)
         overall_reward += reward
+        rewards.append(reward)
 
         print(f"This step lead to a reward of {reward}")
         print(f"The accumulated flow violations are at "
@@ -333,55 +364,57 @@ def perform_benchmark(decisions, simulation_steps=8, n_episodes=10):
         print("#" * 15 + f"End of evaluation of step {episode}" + "#" * 9 + "\n\n")
 
     print(f"The overall reward is {overall_reward}")
+    return rewards
 
 
-# main program
-# handle the input via a command line execution
-steps_per_episode = config['nomination_freq']
-try:
-    time_horizon = int(sys.argv[2])
-except ValueError:
-    raise ValueError(f"Second argument after file name has to give the time "
-                     f"horizon as integer. {sys.argv[2]} is not of type int.")
-if time_horizon % steps_per_episode != 0:
-    raise ValueError(f"The time horizon {time_horizon} in #steps has to be "
-                     f"dividable by {steps_per_episode}.\n"
-                     f"Calculation is time horizon = steps per episode (here "
-                     f"{steps_per_episode}) * number of episodes.")
-else:
-    amount_episodes = int(time_horizon / steps_per_episode)
+if __name__ == "__main__":
+    # main program
+    # handle the input via a command line execution
+    steps_per_episode = config['nomination_freq']
+    try:
+        time_horizon = int(sys.argv[2])
+    except ValueError:
+        raise ValueError(f"Second argument after file name has to give the time "
+                         f"horizon as integer. {sys.argv[2]} is not of type int.")
+    if time_horizon % steps_per_episode != 0:
+        raise ValueError(f"The time horizon {time_horizon} in #steps has to be "
+                         f"dividable by {steps_per_episode}.\n"
+                         f"Calculation is time horizon = steps per episode (here "
+                         f"{steps_per_episode}) * number of episodes.")
+    else:
+        amount_episodes = int(time_horizon / steps_per_episode)
 
-if len(sys.argv) > 4:
-    flow_calc_for_benchmark = sys.argv[4]
-    if flow_calc_for_benchmark in ["y", "f", 1, "1"]:
-        flow_calc_for_benchmark = True
+    if len(sys.argv) > 4:
+        flow_calc_for_benchmark = sys.argv[4]
+        if flow_calc_for_benchmark in ["y", "f", 1, "1"]:
+            flow_calc_for_benchmark = True
+        else:
+            flow_calc_for_benchmark = False
     else:
         flow_calc_for_benchmark = False
-else:
-    flow_calc_for_benchmark = False
 
-# if given correctly, get the benchmark based on the input
-print("#"*20 + " CALCULATING BENCHMARK " + "#"*20)
-decision, decisions_as_yaml = get_benchmark(
-    simulation_steps=steps_per_episode,
-    n_episodes=amount_episodes,
-    flow_variant=flow_calc_for_benchmark,
-    rounded_decimal=1,
-    enable_idle_compressor=False
-)
+    # if given correctly, get the benchmark based on the input
+    print("#"*20 + " CALCULATING BENCHMARK " + "#"*20)
+    decision, decisions_as_yaml = get_benchmark(
+        simulation_steps=steps_per_episode,
+        n_episodes=amount_episodes,
+        flow_variant=flow_calc_for_benchmark,
+        rounded_decimal=1,
+        enable_idle_compressor=False
+    )
 
-# write the decisions into a separate yml file if wanted
-with open(
-        path.join(data_path, 'benchmark_decisions.yml'),
-        'w'
-) as benchmark_file:
-    yaml.dump(decisions_as_yaml, benchmark_file)
+    # write the decisions into a separate yml file if wanted
+    with open(
+            path.join(data_path, 'benchmark_decisions.yml'),
+            'w'
+    ) as benchmark_file:
+        yaml.dump(decisions_as_yaml, benchmark_file)
 
-# perform the benchmark afterwards, but wait a little for user attentiveness
-print("#"*20 + " PERFORMING BENCHMARK " + "#"*20)
-time.sleep(15)
-perform_benchmark(
-    decisions=decision,
-    simulation_steps=steps_per_episode,
-    n_episodes=amount_episodes
-)
+    # perform the benchmark afterwards, but wait a little for user attentiveness
+    print("#"*20 + " PERFORMING BENCHMARK " + "#"*20)
+    time.sleep(15)
+    perform_benchmark(
+        decisions=decision,
+        simulation_steps=steps_per_episode,
+        n_episodes=amount_episodes
+    )
